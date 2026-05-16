@@ -14,6 +14,15 @@ WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, WORKSPACE_ROOT)
 
 
+def _ensure_keep_file(directory):
+    os.makedirs(directory, exist_ok=True)
+    keep_path = os.path.join(directory, ".gitkeep")
+    if not os.path.exists(keep_path):
+        with open(keep_path, "w", encoding="utf-8"):
+            pass
+    return keep_path
+
+
 def _close_all_db_connections(db_path):
     if not os.path.exists(db_path):
         return
@@ -33,10 +42,10 @@ def reset_all():
     faiss_dir = config.faiss_index_path
     if os.path.isdir(faiss_dir):
         shutil.rmtree(faiss_dir)
-        os.makedirs(faiss_dir, exist_ok=True)
+        _ensure_keep_file(faiss_dir)
         results.append(f"[OK] FAISS 索引已清空: {faiss_dir}")
     else:
-        os.makedirs(faiss_dir, exist_ok=True)
+        _ensure_keep_file(faiss_dir)
         results.append(f"[WARN] FAISS 目录不存在，已创建: {faiss_dir}")
 
     db_paths = [
