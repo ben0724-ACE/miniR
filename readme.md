@@ -8,7 +8,7 @@ miniR 只负责文档入库、索引构建、混合检索和结果召回，不�
 
 ## 核心定位
 
-- **面向 Agent 集成**：通过 REST API 返回结构化检索结果，方便作为工具调用。
+- **面向 Agent 集成**：通过 REST API 返回整理后的文本证据，方便作为 Tool/Skill 直接交给 LLM。
 - **纯检索后端**：不绑定任何 LLM、Agent 框架或 Prompt 编排方式。
 - **混合检索**：BM25 + BGE-M3 Dense + BGE-M3 Sparse，经 RRF 融合后可选 BGE Reranker 精排。
 - **本地自托管**：FAISS + SQLite，本地模型、本地文档、本地索引。
@@ -21,34 +21,30 @@ miniR 只负责文档入库、索引构建、混合检索和结果召回，不�
 
 ### 调用方式
 
-启动 API 服务后，Agent 通过 `POST /kb/retrieve` 调用 miniR：
+启动 API 服务后，Agent 通过 `POST /retrieve` 调用 miniR：
 
 ```bash
-curl -s -X POST http://localhost:8765/kb/retrieve \
+curl -s -X POST http://localhost:8765/retrieve \
   -H "Content-Type: application/json" \
   -d "{\"query\":\"$USER_QUERY\",\"top_k\":5,\"use_rerank\":true}"
 ```
 
-返回结果中的 `docs` 是可直接提供给 LLM 的证据片段：
+请求使用 JSON，响应为 `text/plain; charset=utf-8`，返回可直接放进 LLM 上下文的证据文本：
 
-```json
-{
-  "query": "DDPG 算法原理",
-  "docs": [
-    {
-      "doc_id": 12,
-      "content": "文档片段内容...",
-      "meta": {
-        "doc_name": "ddpg_guide.md",
-        "title": "DDPG 算法原理",
-        "images": []
-      },
-      "rank": 1,
-      "rerank_score": 0.82
-    }
-  ],
-  "total_docs": 1
-}
+```text
+检索问题：DDPG 算法原理
+命中片段数：1
+检索耗时：0.532s
+
+以下内容是知识库召回的证据片段，可直接作为 LLM 上下文使用。回答时应优先依据这些证据；证据不足时请明确说明。
+
+[证据 1]
+文档：ddpg_guide.md
+标题：DDPG 算法原理
+分片ID：12
+相关性分数：0.8200
+内容：
+文档片段内容...
 ```
 
 ### Agent 工具描述建议
@@ -57,15 +53,15 @@ curl -s -X POST http://localhost:8765/kb/retrieve \
 
 ```text
 当用户问题可能需要本地知识库信息时，先调用 miniR 检索工具。
-工具返回若干文档片段及来源信息。回答时优先依据检索结果；
+工具返回整理后的证据文本及来源信息。回答时优先依据检索结果；
 如果结果不足或没有命中，应明确说明知识库中没有足够依据。
 ```
 
 推荐流程：
 
 1. Agent 接收用户问题。
-2. 调用 `POST /kb/retrieve`，传入原始问题或改写后的检索 query。
-3. 将 `docs[].content`、`docs[].meta.doc_name`、`docs[].meta.title` 作为上下文交给 LLM。
+2. 调用 `POST /retrieve`，传入原始问题或改写后的检索 query。
+3. 将返回的纯文本证据整体作为上下文交给 LLM。
 4. LLM 基于证据回答，并在需要时引用文档名或标题。
 
 ---
@@ -106,7 +102,7 @@ python fastapi_server.py
 
 - API 文档：http://localhost:8765/docs
 - 健康检查：http://localhost:8765/health
-- Agent 主接口：`POST http://localhost:8765/kb/retrieve`
+- Agent 主接口：`POST http://localhost:8765/retrieve`
 
 ### 4. 启动 Web 管理界面
 
@@ -177,14 +173,20 @@ miniR 的检索流程：
 
 | 接口 | 方法 | 说明 |
 | --- | --- | --- |
-| `/kb/retrieve` | POST | Agent 推荐使用的主检索接口 |
-| `/kb/docs/retrieve` | POST | 仅文档召回接口 |
-| `/api/documents` | GET | 文档列表 |
-| `/api/documents/{corpus_id}` | GET | 文档详情 |
-| `/api/documents/{corpus_id}/toggle` | PUT | 启用或停用文档 |
-| `/api/documents/{corpus_id}` | DELETE | 删除文档并同步索引 |
-| `/api/stats` | GET | 系统统计 |
+| `/retrieve` | POST | Agent/Skill/Tool 推荐使用的主检索接口，返回纯文本证据 |
 | `/health` | GET | 健康检查 |
+
+`/retrieve` 请求体：
+
+```json
+{
+  "query": "问题内容",
+  "top_k": 5,
+  "use_rerank": true
+}
+```
+
+`top_k` 范围为 1-20，`use_rerank` 默认为 `true`。
 
 ---
 
@@ -237,7 +239,7 @@ python scripts/add_documents.py --chunk-strategy length --chunk-size 512 --overl
 
 ## 文档管理
 
-Web UI 和 API 都支持：
+Web UI 支持：
 
 - 查看文档列表和分片数量
 - 启用或停用文档
@@ -286,7 +288,7 @@ python scripts/manage_documents.py stats
 
 ```text
 miniR/
-├── fastapi_server.py          # FastAPI 检索与管理接口
+├── fastapi_server.py          # FastAPI Agent 检索接口
 ├── web_ui.py                  # Gradio 管理界面
 ├── scripts/
 │   ├── add_documents.py       # 文档入库、解析、分片、向量生成
@@ -305,8 +307,6 @@ miniR/
 ├── modelscope_models/         # 默认模型目录
 └── requirements.txt
 ```
-
----
 
 ## 技术栈
 
