@@ -122,7 +122,7 @@ Web UI 用于文档扫描、分片预览、人工审核、入库、检索测试�
 
 1. 启动 `python web_ui.py`。
 2. 在“文档入库”页输入服务器上的文档目录。
-3. 点击“扫描文件”，系统递归查找 `.md` 和 `.docx`。
+3. 点击“扫描文件”，系统递归查找支持的文档格式：`.md`、`.docx`、`.pptx`、`.xlsx`、`.pdf`。递归扫描会跳过子目录 `images/`，避免把文档解析出的图片资源当成新文档。
 4. 选择分片策略并预览分片。
 5. 在审核面板中修改文本、删除图片或还原分片。
 6. 点击“确认入库”。
@@ -139,7 +139,7 @@ python scripts/add_documents.py --chunk-strategy title
 python scripts/add_documents.py --chunk-strategy length --chunk-size 512 --overlap-ratio 0.1
 ```
 
-默认扫描 [doc/](doc/) 目录，支持 Markdown 和 Word 文档。
+默认扫描 [doc/](doc/) 目录，支持 Markdown、Word、PPT、Excel 和 PDF 文档。图片仅作为文档内引用或内嵌资源保留，不会作为独立文档入库。
 
 ---
 
@@ -192,6 +192,8 @@ miniR 的检索流程：
 
 ## 文档格式
 
+当前版本采用纯 Python、文本优先解析：Office/PDF 会提取可读取文本和文档内图片；扫描 PDF 不会做 OCR，图片内容本身不可按语义检索。
+
 ### Markdown
 
 推荐使用标准 Markdown 标题和图片语法：
@@ -203,7 +205,7 @@ miniR 的检索流程：
 ![架构图](images/architecture.png)
 ```
 
-图片路径会按文档所在目录解析，并在检索结果中返回。
+图片路径会按文档所在目录解析。入库时索引元数据保存相对路径，检索召回时会转换为绝对路径返回。
 
 ### Word `.docx`
 
@@ -213,7 +215,19 @@ Word 标题样式会被转换为 Markdown 标题层级。文档内图片会提�
 <<IMAGE:a3f7b2c1>>
 ```
 
-Web 审核界面会把占位符渲染为图片标签，检索结果中会尽量内联展示图片。
+Web 审核界面会把占位符渲染为图片标签，检索结果中会返回图片绝对路径，方便上层 Agent/LLM 定位本地图片。
+
+### PowerPoint `.pptx`
+
+按 slide 提取标题、文本框和备注文本。PPT 内嵌图片会提取到同目录 `images/` 文件夹，并以 `<<IMAGE:xxxx>>` 占位符关联到对应分片。
+
+### Excel `.xlsx`
+
+按工作表入库。每个非空 sheet 会转换为 Markdown 表格文本，工作表内图片会作为分片图片保留。
+
+### PDF `.pdf`
+
+按页提取可复制文本和页面内图片。扫描版 PDF 不做 OCR；如果页面只有图片，系统会保留图片，但不会自动识别图片里的文字。
 
 ---
 
@@ -221,7 +235,7 @@ Web 审核界面会把占位符渲染为图片标签，检索结果中会尽量�
 
 ### 标题分片
 
-适合结构清晰的 Markdown 或 Word 文档。系统按标题层级切分，每个标题下的正文形成一个 chunk。
+适合结构清晰的 Markdown、Word、PPT、Excel 或 PDF 文档。系统按标题、页、slide、sheet 等结构切分，每个结构单元形成一个 chunk。
 
 ```bash
 python scripts/add_documents.py --chunk-strategy title
@@ -319,7 +333,7 @@ miniR/
 | Sparse 检索 | BGE-M3 lexical weights |
 | 全文检索 | rank_bm25 + jieba |
 | Rerank | BGE-Reranker-v2-M3 |
-| 文档解析 | python-docx + lxml |
+| 文档解析 | python-docx + python-pptx + openpyxl + PyMuPDF + lxml |
 | 存储 | SQLite |
 
 ---

@@ -1,5 +1,5 @@
-!modelscope_models/.gitkeep
 modelscope_models/*
+!modelscope_models/.gitkeep
 __pycache__/
 clone/
 doc/*

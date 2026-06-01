@@ -30,6 +30,17 @@ from scripts.bm25_indexer import BM25Indexer
 from scripts.config_manager import get_config
 
 
+SUPPORTED_DOCUMENT_EXTENSIONS = (
+    '.md',
+    '.docx',
+    '.pptx',
+    '.xlsx',
+    '.pdf',
+)
+SUPPORTED_DOCUMENT_EXTENSIONS_TEXT = ', '.join(SUPPORTED_DOCUMENT_EXTENSIONS)
+RESOURCE_DIRECTORY_NAMES = {'images'}
+
+
 class DocumentProcessor:
     """文档处理器"""
 
@@ -296,18 +307,28 @@ class DocumentProcessor:
     def find_markdown_files(self) -> List[str]:
         md_files = []
         for root, dirs, files in os.walk(self.md_directory):
+            self._filter_resource_dirs(dirs)
             for file in files:
-                if file.endswith('.md'):
+                if file.lower().endswith('.md'):
                     md_files.append(os.path.join(root, file))
         return sorted(md_files)
 
     def find_files(self) -> List[str]:
         files = []
         for root, dirs, filenames in os.walk(self.md_directory):
+            self._filter_resource_dirs(dirs)
             for file in filenames:
-                if file.endswith('.md') or file.endswith('.docx'):
+                if self.is_supported_file(file):
                     files.append(os.path.join(root, file))
         return sorted(files)
+
+    @staticmethod
+    def _filter_resource_dirs(dirs: List[str]):
+        dirs[:] = [d for d in dirs if d.lower() not in RESOURCE_DIRECTORY_NAMES]
+
+    @staticmethod
+    def is_supported_file(file_path: str) -> bool:
+        return os.path.splitext(file_path)[1].lower() in SUPPORTED_DOCUMENT_EXTENSIONS
 
     def estimate_chunks(self, content: str) -> int:
         title_pattern = re.compile(r'^#{1,}\s+', re.MULTILINE)
@@ -392,8 +413,80 @@ class DocumentProcessor:
     def _reindex_placeholders(content: str, images: List[str]) -> Tuple[str, List[str]]:
         return content, images
 
+    @staticmethod
+    def _normalize_image_extension(ext: str) -> str:
+        ext = (ext or "").lower().strip().lstrip(".")
+        if ext == "jpeg":
+            ext = "jpg"
+        if ext not in {"png", "jpg", "webp", "bmp", "gif", "tiff"}:
+            ext = "png"
+        return ext
+
+    @staticmethod
+    def _hash_text(value: str, length: int = 12) -> str:
+        import hashlib
+        return hashlib.md5(value.encode("utf-8", errors="ignore")).hexdigest()[:length]
+
+    def _image_output_dir(self, file_path: str) -> str:
+        file_dir = os.path.dirname(file_path)
+        img_dir = os.path.join(file_dir, "images")
+        os.makedirs(img_dir, exist_ok=True)
+        return img_dir
+
+    def _save_extracted_image(
+        self,
+        file_path: str,
+        source_prefix: str,
+        image_bytes: bytes,
+        ext: str,
+        image_index: int
+    ) -> Optional[str]:
+        if not image_bytes:
+            return None
+        ext = self._normalize_image_extension(ext)
+        safe_stem = f"{source_prefix}_{self._hash_text(os.path.abspath(file_path), 12)}"
+        digest = self._hash_text(f"{len(image_bytes)}:{image_bytes[:2048]!r}", 12)
+        img_path = os.path.join(self._image_output_dir(file_path), f"{safe_stem}_img_{image_index}_{digest}.{ext}")
+        try:
+            if not os.path.exists(img_path):
+                with open(img_path, "wb") as f:
+                    f.write(image_bytes)
+            return os.path.normpath(img_path)
+        except Exception as e:
+            print(f"  [警告] 图片保存失败: {e}")
+            return None
+
+    def _register_image_placeholder(
+        self,
+        file_path: str,
+        image_path: str,
+        images: List[str],
+        image_map: Dict[str, str],
+        seed: str
+    ) -> str:
+        abs_path = os.path.normpath(image_path)
+        ph_id = self._hash_text(f"{os.path.basename(file_path)}:{seed}:{abs_path}:{len(image_map)}", 8)
+        while ph_id in image_map and image_map[ph_id] != abs_path:
+            seed += ":x"
+            ph_id = self._hash_text(f"{os.path.basename(file_path)}:{seed}:{abs_path}:{len(image_map)}", 8)
+        image_map[ph_id] = abs_path
+        images.append(abs_path)
+        return f"<<IMAGE:{ph_id}>>"
+
+    @staticmethod
+    def _clean_text_lines(lines: List[str]) -> List[str]:
+        return [line.strip() for line in lines if line and line.strip()]
+
+    @staticmethod
+    def _format_cell_value(value) -> str:
+        if value is None:
+            return ""
+        text = str(value).replace("\r", " ").replace("\n", " ").strip()
+        return text.replace("|", "\\|")
+
     def read_file(self, file_path: str) -> Tuple[str, str, List[str], Dict[str, str]]:
-        if file_path.endswith('.md'):
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.md':
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             images = []
@@ -408,7 +501,7 @@ class DocumentProcessor:
                     abs_img_path = os.path.normpath(os.path.join(file_dir, img_path))
                 images.append(abs_img_path)
             return content, 'markdown', images, {}
-        elif file_path.endswith('.docx'):
+        elif ext == '.docx':
             import hashlib
             from docx import Document as DocxDocument
 
@@ -557,7 +650,354 @@ class DocumentProcessor:
 
             print(f"  [Word] 文本行数: {len(content_lines)}, 插入图片: {img_count}, 占位符映射: {len(image_map)}")
             return '\n'.join(content_lines), 'word', images, image_map
+        elif ext == '.pptx':
+            return self._read_pptx_file(file_path)
+        elif ext == '.xlsx':
+            return self._read_excel_file(file_path)
+        elif ext == '.pdf':
+            return self._read_pdf_file(file_path)
         return '', 'unknown', [], {}
+
+    def _read_pptx_file(self, file_path: str) -> Tuple[str, str, List[str], Dict[str, str]]:
+        try:
+            from pptx import Presentation
+            from pptx.enum.shapes import MSO_SHAPE_TYPE
+        except ImportError as e:
+            print(f"  [PPT] 缺少 python-pptx 依赖: {e}")
+            return '', 'ppt', [], {}
+
+        try:
+            prs = Presentation(file_path)
+        except Exception as e:
+            print(f"  [PPT] 打开失败: {e}")
+            return '', 'ppt', [], {}
+
+        images = []
+        image_map = {}
+        content_lines = []
+        img_count = 0
+
+        def _iter_shapes(shapes):
+            for shape in shapes:
+                yield shape
+                if hasattr(shape, "shapes"):
+                    yield from _iter_shapes(shape.shapes)
+
+        for slide_idx, slide in enumerate(prs.slides, 1):
+            title = ""
+            try:
+                if slide.shapes.title and getattr(slide.shapes.title, "has_text_frame", False):
+                    title = (slide.shapes.title.text or "").strip()
+            except Exception:
+                title = ""
+
+            content_lines.append(f"# Slide {slide_idx}: {title}" if title else f"# Slide {slide_idx}")
+            text_blocks = []
+            slide_images = []
+
+            for shape_idx, shape in enumerate(_iter_shapes(slide.shapes)):
+                try:
+                    if getattr(shape, "has_text_frame", False):
+                        text = (shape.text or "").strip()
+                        if text and text != title and text not in text_blocks:
+                            text_blocks.append(text)
+                except Exception:
+                    pass
+
+                try:
+                    if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                        image = shape.image
+                        img_path = self._save_extracted_image(
+                            file_path,
+                            "ppt",
+                            image.blob,
+                            image.ext,
+                            img_count,
+                        )
+                        if img_path:
+                            placeholder = self._register_image_placeholder(
+                                file_path,
+                                img_path,
+                                images,
+                                image_map,
+                                f"slide:{slide_idx}:shape:{shape_idx}",
+                            )
+                            slide_images.append(placeholder)
+                            img_count += 1
+                except Exception as e:
+                    print(f"  [PPT] 第 {slide_idx} 页图片提取失败: {e}")
+
+            if text_blocks:
+                content_lines.extend(text_blocks)
+
+            try:
+                if getattr(slide, "has_notes_slide", False):
+                    notes_text = (slide.notes_slide.notes_text_frame.text or "").strip()
+                    if notes_text:
+                        content_lines.append("备注：")
+                        content_lines.append(notes_text)
+            except Exception:
+                pass
+
+            content_lines.extend(slide_images)
+            content_lines.append("")
+
+        print(f"  [PPT] 页数: {len(prs.slides)}, 插入图片: {img_count}")
+        return '\n'.join(content_lines).strip(), 'ppt', images, image_map
+
+    def _extract_xlsx_images_by_sheet(self, file_path: str, sheet_titles: List[str]) -> Dict[str, List[str]]:
+        import posixpath
+        import zipfile
+        from xml.etree import ElementTree as ET
+
+        result = {title: [] for title in sheet_titles}
+
+        def _relationships(zf, rels_path: str) -> List[Tuple[str, str, str]]:
+            if rels_path not in zf.namelist():
+                return []
+            try:
+                root = ET.fromstring(zf.read(rels_path))
+            except Exception:
+                return []
+            rels = []
+            for rel in root:
+                if not rel.tag.endswith("Relationship"):
+                    continue
+                rels.append((
+                    rel.attrib.get("Id", ""),
+                    rel.attrib.get("Target", ""),
+                    rel.attrib.get("Type", ""),
+                ))
+            return rels
+
+        def _resolve_part(base_part: str, target: str) -> str:
+            if not target or target.startswith(("http://", "https://")):
+                return ""
+            if target.startswith("/"):
+                return target.lstrip("/")
+            return posixpath.normpath(posixpath.join(posixpath.dirname(base_part), target))
+
+        try:
+            with zipfile.ZipFile(file_path, "r") as zf:
+                names = set(zf.namelist())
+                saved_count = 0
+                workbook_rels = {
+                    rel_id: target
+                    for rel_id, target, _rel_type in _relationships(zf, "xl/_rels/workbook.xml.rels")
+                }
+                sheet_parts = []
+                try:
+                    workbook_root = ET.fromstring(zf.read("xl/workbook.xml"))
+                    for sheet_node in workbook_root.iter():
+                        if not sheet_node.tag.endswith("sheet"):
+                            continue
+                        sheet_title = sheet_node.attrib.get("name", "")
+                        rel_id = sheet_node.attrib.get(
+                            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id",
+                            "",
+                        )
+                        sheet_part = _resolve_part("xl/workbook.xml", workbook_rels.get(rel_id, ""))
+                        if sheet_title in result and sheet_part in names:
+                            sheet_parts.append((sheet_title, sheet_part))
+                except Exception:
+                    sheet_parts = []
+
+                if not sheet_parts:
+                    sheet_parts = [
+                        (sheet_title, f"xl/worksheets/sheet{sheet_idx}.xml")
+                        for sheet_idx, sheet_title in enumerate(sheet_titles, 1)
+                    ]
+
+                for sheet_title, sheet_part in sheet_parts:
+                    sheet_rels = (
+                        posixpath.dirname(sheet_part)
+                        + "/_rels/"
+                        + posixpath.basename(sheet_part)
+                        + ".rels"
+                    )
+                    if sheet_rels not in names:
+                        continue
+
+                    drawing_parts = []
+                    for _rel_id, target, rel_type in _relationships(zf, sheet_rels):
+                        if "drawing" not in rel_type and "drawing" not in target:
+                            continue
+                        drawing_part = _resolve_part(sheet_part, target)
+                        if drawing_part and drawing_part in names:
+                            drawing_parts.append(drawing_part)
+
+                    seen_media = set()
+                    for drawing_part in drawing_parts:
+                        drawing_rels = (
+                            posixpath.dirname(drawing_part)
+                            + "/_rels/"
+                            + posixpath.basename(drawing_part)
+                            + ".rels"
+                        )
+                        for _rel_id, target, rel_type in _relationships(zf, drawing_rels):
+                            if "image" not in rel_type and "/media/" not in target:
+                                continue
+                            media_part = _resolve_part(drawing_part, target)
+                            if not media_part or media_part not in names or media_part in seen_media:
+                                continue
+                            seen_media.add(media_part)
+                            img_path = self._save_extracted_image(
+                                file_path,
+                                "xlsx",
+                                zf.read(media_part),
+                                os.path.splitext(media_part)[1],
+                                saved_count,
+                            )
+                            if img_path:
+                                result.setdefault(sheet_title, []).append(img_path)
+                                saved_count += 1
+        except Exception as e:
+            print(f"  [Excel] zip 图片提取失败: {e}")
+
+        return result
+
+    def _read_excel_file(self, file_path: str) -> Tuple[str, str, List[str], Dict[str, str]]:
+        try:
+            from openpyxl import load_workbook
+        except ImportError as e:
+            print(f"  [Excel] 缺少 openpyxl 依赖: {e}")
+            return '', 'excel', [], {}
+
+        try:
+            workbook = load_workbook(file_path, data_only=False, read_only=False)
+        except Exception as e:
+            print(f"  [Excel] 打开失败: {e}")
+            return '', 'excel', [], {}
+
+        images = []
+        image_map = {}
+        content_lines = []
+        img_count = 0
+        sheet_image_paths = self._extract_xlsx_images_by_sheet(
+            file_path,
+            [sheet.title for sheet in workbook.worksheets],
+        )
+
+        for sheet in workbook.worksheets:
+            rows = []
+            for row in sheet.iter_rows():
+                values = [self._format_cell_value(cell.value) for cell in row]
+                while values and values[-1] == "":
+                    values.pop()
+                if any(values):
+                    rows.append(values)
+
+            sheet_images = []
+            for image_idx, img_path in enumerate(sheet_image_paths.get(sheet.title, [])):
+                placeholder = self._register_image_placeholder(
+                    file_path,
+                    img_path,
+                    images,
+                    image_map,
+                    f"sheet:{sheet.title}:image:{image_idx}",
+                )
+                sheet_images.append(placeholder)
+                img_count += 1
+
+            if not rows and not sheet_images:
+                continue
+
+            content_lines.append(f"# 工作表：{sheet.title}")
+            if rows:
+                max_cols = max(len(row) for row in rows)
+                padded_rows = [row + [""] * (max_cols - len(row)) for row in rows]
+                headers = [f"列{i + 1}" for i in range(max_cols)]
+                content_lines.append("| " + " | ".join(headers) + " |")
+                content_lines.append("| " + " | ".join(["---"] * max_cols) + " |")
+                for row in padded_rows:
+                    content_lines.append("| " + " | ".join(row) + " |")
+            content_lines.extend(sheet_images)
+            content_lines.append("")
+
+        try:
+            workbook.close()
+        except Exception:
+            pass
+
+        print(f"  [Excel] 工作表: {len(workbook.worksheets)}, 插入图片: {img_count}")
+        return '\n'.join(content_lines).strip(), 'excel', images, image_map
+
+    def _read_pdf_file(self, file_path: str) -> Tuple[str, str, List[str], Dict[str, str]]:
+        try:
+            import fitz
+        except ImportError as e:
+            print(f"  [PDF] 缺少 PyMuPDF 依赖: {e}")
+            return '', 'pdf', [], {}
+
+        try:
+            pdf = fitz.open(file_path)
+        except Exception as e:
+            print(f"  [PDF] 打开失败: {e}")
+            return '', 'pdf', [], {}
+
+        if getattr(pdf, "needs_pass", False):
+            print("  [PDF] 文件已加密，跳过")
+            try:
+                pdf.close()
+            except Exception:
+                pass
+            return '', 'pdf', [], {}
+
+        images = []
+        image_map = {}
+        content_lines = []
+        img_count = 0
+        seen_xrefs = {}
+
+        page_count = len(pdf)
+        try:
+            for page_idx in range(page_count):
+                page = pdf[page_idx]
+                content_lines.append(f"# 第 {page_idx + 1} 页")
+                text = (page.get_text("text") or "").strip()
+                if text:
+                    content_lines.append(text)
+
+                page_placeholders = []
+                for image_idx, img in enumerate(page.get_images(full=True)):
+                    xref = img[0]
+                    try:
+                        if xref in seen_xrefs:
+                            img_path = seen_xrefs[xref]
+                        else:
+                            extracted = pdf.extract_image(xref)
+                            img_path = self._save_extracted_image(
+                                file_path,
+                                "pdf",
+                                extracted.get("image", b""),
+                                extracted.get("ext", "png"),
+                                img_count,
+                            )
+                            if img_path:
+                                seen_xrefs[xref] = img_path
+                                img_count += 1
+                        if img_path:
+                            placeholder = self._register_image_placeholder(
+                                file_path,
+                                img_path,
+                                images,
+                                image_map,
+                                f"page:{page_idx + 1}:xref:{xref}:image:{image_idx}",
+                            )
+                            page_placeholders.append(placeholder)
+                    except Exception as e:
+                        print(f"  [PDF] 第 {page_idx + 1} 页图片提取失败: {e}")
+
+                content_lines.extend(page_placeholders)
+                content_lines.append("")
+        finally:
+            try:
+                pdf.close()
+            except Exception:
+                pass
+
+        print(f"  [PDF] 页数: {page_count}, 插入图片: {img_count}")
+        return '\n'.join(content_lines).strip(), 'pdf', images, image_map
 
     def parse_word(self, content: str, file_path: str = None, images: List[str] = None, image_map: Dict[str, str] = None) -> List[Dict]:
         sections = []
@@ -821,6 +1261,20 @@ class DocumentProcessor:
 
         return final_sections
 
+    def parse_sections(
+        self,
+        content: str,
+        doc_type: str,
+        file_path: str = None,
+        images: List[str] = None,
+        image_map: Dict[str, str] = None
+    ) -> List[Dict]:
+        if doc_type == "markdown":
+            return self.parse_markdown(content, file_path, images)
+        if doc_type in {"word", "ppt", "excel", "pdf"}:
+            return self.parse_word(content, file_path, images, image_map)
+        return []
+
     def split_by_length(self, content: str, chunk_size: int = 500, overlap_ratio: float = 0.1) -> List[str]:
         if not content or len(content) <= chunk_size:
             return [content] if content else []
@@ -937,18 +1391,23 @@ class DocumentProcessor:
         return False
 
     def _check_path_match(self, existing: Corpus, file_path: str, relative_path: str) -> bool:
-        if existing.relative_path and existing.relative_path == relative_path:
+        existing_file_path = os.path.normpath(existing.file_path) if existing.file_path else ""
+        current_file_path = os.path.normpath(file_path) if file_path else ""
+        existing_relative_path = os.path.normpath(existing.relative_path) if existing.relative_path else ""
+        current_relative_path = os.path.normpath(relative_path) if relative_path else ""
+
+        if existing_relative_path and existing_relative_path == current_relative_path:
             return True
-        if existing.file_path == file_path:
+        if existing_file_path and existing_file_path == current_file_path:
             return True
-        if existing.file_path == relative_path:
+        if existing_file_path and existing_file_path == current_relative_path:
             return True
-        if file_path.endswith(existing.file_path) or existing.file_path.endswith(os.path.basename(file_path)):
+        if existing_file_path and current_file_path.endswith(existing_file_path):
             return True
         return False
 
     def process_document(self, file_path: str) -> Tuple[str, List[Dict], Dict]:
-        doc_name = os.path.splitext(os.path.basename(file_path))[0]
+        doc_name = os.path.basename(file_path)
 
         if self._is_document_exists(file_path):
             print(f"  [跳过] 文档已存在: {doc_name}")
@@ -960,10 +1419,7 @@ class DocumentProcessor:
             return None, [], None
 
         if self.chunk_strategy == "title":
-            if doc_type == "word":
-                sections = self.parse_word(content, file_path, images, image_map)
-            else:
-                sections = self.parse_markdown(content, file_path, images)
+            sections = self.parse_sections(content, doc_type, file_path, images, image_map)
             print(f"  [策略] 使用标题分片策略")
         else:
             chunks_content = self.split_by_length(content, self.chunk_size, self.overlap_ratio)
@@ -1057,7 +1513,7 @@ class DocumentProcessor:
         return corpus_id, chunks, {}
 
     def process_document_web(self, file_path: str, tags: Dict = None) -> Dict:
-        doc_name = os.path.splitext(os.path.basename(file_path))[0]
+        doc_name = os.path.basename(file_path)
 
         if self._is_document_exists(file_path):
             return {"success": False, "corpus_id": None, "doc_name": doc_name,
@@ -1069,10 +1525,7 @@ class DocumentProcessor:
                     "message": f"文档内容为空: {doc_name}", "tags": None}
 
         if self.chunk_strategy == "title":
-            if doc_type == "word":
-                sections = self.parse_word(content, file_path, images, image_map)
-            else:
-                sections = self.parse_markdown(content, file_path, images)
+            sections = self.parse_sections(content, doc_type, file_path, images, image_map)
         else:
             chunks_content = self.split_by_length(content, self.chunk_size, self.overlap_ratio)
             sections = []
@@ -1214,7 +1667,7 @@ class DocumentProcessor:
 
     def process_all(self):
         md_files = self.find_files()
-        print(f"找到 {len(md_files)} 个 Markdown/Word 文件")
+        print(f"找到 {len(md_files)} 个支持的文档文件")
         print(f"[分片策略] chunk_strategy={self.chunk_strategy}, chunk_size={self.chunk_size}, overlap_ratio={self.overlap_ratio}")
 
         stats = self.db.get_stats()
@@ -1222,7 +1675,7 @@ class DocumentProcessor:
             print(f"数据库中已有 {stats.get('corpus', 0)} 个语料")
 
         if not md_files:
-            print("没有找到 Markdown 或 Word 文件")
+            print(f"没有找到支持的文档文件（{SUPPORTED_DOCUMENT_EXTENSIONS_TEXT}）")
             return
 
         if self.append_mode:
@@ -1288,7 +1741,7 @@ class DocumentProcessor:
                 doc_info = {
                     "corpus_id": corpus_id,
                     "file_path": file_path,
-                    "name": os.path.splitext(os.path.basename(file_path))[0],
+                    "name": os.path.basename(file_path),
                     "chunk_count": len(chunks),
                     "vector_ids": []
                 }

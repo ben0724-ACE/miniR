@@ -26,7 +26,12 @@ import faiss
 from tqdm import tqdm
 from scripts.db_manager import DatabaseManager, Corpus, Chunk
 from scripts.manage_documents import DocumentManager
-from scripts.add_documents import DocumentProcessor
+from scripts.add_documents import (
+    DocumentProcessor,
+    RESOURCE_DIRECTORY_NAMES,
+    SUPPORTED_DOCUMENT_EXTENSIONS,
+    SUPPORTED_DOCUMENT_EXTENSIONS_TEXT,
+)
 from scripts.bm25_indexer import BM25Indexer
 from scripts.config_manager import get_config
 
@@ -37,7 +42,7 @@ LANG = {
         "tab_docs": "文档列表",
         "tab_search": "检索测试",
         "tab_system": "系统管理",
-        "import_desc": "输入服务器上的文件夹路径，系统自动递归扫描所有 `.md` 和 `.docx` 文件并入库。\n\n✅ 支持 Markdown (.md) 和 Word (.docx) 文档\n✅ 图片引用完整保留\n✅ 扫描时已入库的文档会自动跳过。",
+        "import_desc": f"输入服务器上的文件夹路径，系统自动递归扫描支持的文档并入库。\n\n✅ 支持 {SUPPORTED_DOCUMENT_EXTENSIONS_TEXT}\n✅ 图片引用完整保留\n✅ 扫描时已入库的文档会自动跳过。",
         "folder_path": "文件夹路径",
         "folder_placeholder": "如 D:\\docs 或 /home/user/docs",
         "scan_btn": "📂 扫描文件",
@@ -106,7 +111,7 @@ LANG = {
         "disabled": "停用",
         "scan_files_first": "请先扫描文件夹",
         "path_not_exist": "路径不存在或不是文件夹",
-        "no_md_files": "文件夹中未找到 .md 或 .docx 文件",
+        "no_md_files": f"文件夹中未找到支持的文档文件（{SUPPORTED_DOCUMENT_EXTENSIONS_TEXT}）",
         "found_files": "找到 {count} 个文档（⏩新文档 {new}，✅已入库 {exist}）",
         "reset_warning_text": "⚠️ 即将清空所有数据（SQLite + FAISS），此操作不可恢复！\n\n请输入确认码 ** {code} ** 后点击「确认删库」",
         "confirm_wrong": "❌ 确认码不正确，操作已取消",
@@ -273,8 +278,9 @@ def scan_server_folder(folder_path):
 
     doc_files = []
     for root, dirs, files in os.walk(folder_path):
+        dirs[:] = [d for d in dirs if d.lower() not in RESOURCE_DIRECTORY_NAMES]
         for f in sorted(files):
-            if f.endswith('.md') or f.endswith('.docx'):
+            if os.path.splitext(f)[1].lower() in SUPPORTED_DOCUMENT_EXTENSIONS:
                 full_path = os.path.join(root, f)
                 rel_path = os.path.relpath(full_path, folder_path)
                 doc_files.append((full_path, rel_path))
@@ -418,7 +424,7 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
     _pending_chunks = []
 
     for file_path in file_paths:
-        doc_name = os.path.splitext(os.path.basename(file_path))[0]
+        doc_name = os.path.basename(file_path)
         try:
             content, doc_format, images, image_map = processor.read_file(file_path)
             if not content.strip():
@@ -438,12 +444,7 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
                         "title_path": ""
                     })
             else:
-                if doc_format == 'markdown':
-                    sections = processor.parse_markdown(content, file_path, images)
-                elif doc_format == 'word':
-                    sections = processor.parse_word(content, file_path, images, image_map)
-                else:
-                    continue
+                sections = processor.parse_sections(content, doc_format, file_path, images, image_map)
 
             if not sections:
                 continue
@@ -690,14 +691,15 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
 
     results = []
     all_chunks = []
-    doc_names_added = {}
+    docs_added = {}
     config = get_config()
 
     for chunk in chunks_data:
         file_path = chunk["file_path"]
         doc_name = chunk["doc_name"]
+        doc_key = os.path.normcase(os.path.abspath(file_path))
 
-        if doc_name not in doc_names_added:
+        if doc_key not in docs_added:
             if processor._is_document_exists(file_path):
                 results.append(f"⏭ 文档已存在，跳过: {doc_name}")
                 continue
@@ -711,12 +713,12 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
                 chunk_strategy=chunk_strategy,
             )
             corpus_id = processor.db.add_corpus(corpus)
-            doc_names_added[doc_name] = {"corpus_id": corpus_id, "chunk_count": 0}
+            docs_added[doc_key] = {"corpus_id": corpus_id, "chunk_count": 0}
         else:
-            corpus_id = doc_names_added[doc_name]["corpus_id"]
+            corpus_id = docs_added[doc_key]["corpus_id"]
 
-        doc_names_added[doc_name]["chunk_count"] += 1
-        chunk_index = doc_names_added[doc_name]["chunk_count"] - 1
+        docs_added[doc_key]["chunk_count"] += 1
+        chunk_index = docs_added[doc_key]["chunk_count"] - 1
 
         title_path = chunk.get("title_path", "")
         title = chunk.get("title", "")
@@ -739,7 +741,7 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
             "original_content": chunk.get("original_content", chunk["content"]),
         })
 
-    for doc_name, info in doc_names_added.items():
+    for info in docs_added.values():
         processor.db.update_corpus_chunk_count(info["corpus_id"], info["chunk_count"])
 
     if not all_chunks:
@@ -807,9 +809,9 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
         processor.save_faiss_index()
         _reset_retriever()
 
-        results.append(f"✅ 入库完成: {len(all_chunks)} 个分片, {len(doc_names_added)} 个文档, {processor.faiss_index.ntotal} 条向量")
+        results.append(f"✅ 入库完成: {len(all_chunks)} 个分片, {len(docs_added)} 个文档, {processor.faiss_index.ntotal} 条向量")
     except Exception as e:
-        for info in doc_names_added.values():
+        for info in docs_added.values():
             try:
                 processor.db.delete_corpus(info["corpus_id"])
             except Exception:
@@ -852,7 +854,7 @@ def do_import(table_data, chunk_strategy, chunk_size, overlap_ratio):
     all_chunks = []
 
     for file_path in file_paths:
-        doc_name = os.path.splitext(os.path.basename(file_path))[0]
+        doc_name = os.path.basename(file_path)
         try:
             result = processor.process_document_web(
                 file_path=file_path,
