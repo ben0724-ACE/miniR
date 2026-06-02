@@ -1,0 +1,3 @@
+display_name: miniR Retrieval
+short_description: Query a local miniR RAG knowledge base and ground answers in returned evidence.
+default_prompt: Use miniR to retrieve local knowledge-base evidence before answering the user's question.
