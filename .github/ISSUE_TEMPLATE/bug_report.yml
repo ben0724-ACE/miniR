@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a reproducible miniR bug
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for us to reproduce it locally.
+  - type: input
+    id: version
+    attributes:
+      label: miniR version or commit
+      description: Use `git rev-parse --short HEAD` if you are running from source.
+      placeholder: "v0.1.0 or 15aa6cf"
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Document ingestion
+        - Web UI
+        - Retrieval API
+        - Index rebuild
+        - Agent Skill
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include commands, API requests, file types and relevant config.
+      placeholder: |
+        1. Run ...
+        2. Upload or scan ...
+        3. Query ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include logs or tracebacks when possible.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Windows 11, Python 3.12, conda"
+    validations:
+      required: true

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">miniR document ingestion UI screenshot</title>
+  <desc id="desc">Illustrative screenshot of the miniR Web UI document ingestion and review workflow.</desc>
+  <rect width="1280" height="760" fill="#f5f7fb"/>
+  <rect x="48" y="44" width="1184" height="672" rx="8" fill="#ffffff" stroke="#d8dee9"/>
+  <rect x="48" y="44" width="1184" height="64" rx="8" fill="#111827"/>
+  <text x="82" y="84" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">miniR</text>
+  <text x="166" y="84" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" fill="#cbd5e1">Local RAG Retrieval Backend</text>
+  <rect x="82" y="142" width="264" height="526" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="106" y="178" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Document Ingestion</text>
+  <rect x="106" y="205" width="216" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="124" y="231" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">doc/knowledge_base</text>
+  <rect x="106" y="266" width="98" height="38" rx="6" fill="#2563eb"/>
+  <text x="126" y="290" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Scan files</text>
+  <rect x="214" y="266" width="108" height="38" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="236" y="290" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">Preview</text>
+  <text x="106" y="342" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">Supported formats</text>
+  <text x="106" y="372" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#0f172a">.md .docx .pptx .xlsx .pdf</text>
+  <text x="106" y="428" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">Chunk strategy</text>
+  <rect x="106" y="448" width="88" height="32" rx="6" fill="#dbeafe"/>
+  <text x="130" y="469" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">title</text>
+  <rect x="202" y="448" width="90" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="229" y="469" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">length</text>
+  <rect x="382" y="142" width="794" height="526" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="414" y="180" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827">Review generated chunks</text>
+  <text x="414" y="208" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">4 documents scanned · 18 chunks · 7 document images</text>
+  <rect x="414" y="236" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="438" y="266" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">deployment_guide.pdf · page 3</text>
+  <text x="438" y="294" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">The local model path is configured in config/paths.json before starting the API service.</text>
+  <rect x="1022" y="260" width="62" height="44" rx="6" fill="#e0f2fe" stroke="#7dd3fc"/>
+  <text x="1039" y="287" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#0369a1">image</text>
+  <rect x="414" y="350" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="438" y="380" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">architecture.pptx · slide 2</text>
+  <text x="438" y="408" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">miniR builds SQLite metadata, FAISS vectors, BM25 tokens and sparse embedding features.</text>
+  <rect x="414" y="464" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="438" y="494" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">release_matrix.xlsx · sheet API</text>
+  <text x="438" y="522" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Rows are converted into Markdown-style tables for retrieval and source attribution.</text>
+  <rect x="980" y="590" width="134" height="42" rx="6" fill="#059669"/>
+  <text x="1011" y="616" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Confirm import</text>
+</svg>

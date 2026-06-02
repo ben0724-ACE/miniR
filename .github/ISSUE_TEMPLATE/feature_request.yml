@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an improvement for miniR
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the retrieval or ingestion workflow you want miniR to support.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What limitation or workflow gap are you running into?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, API or UI change you want.
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Area
+      options:
+        - Document ingestion
+        - Retrieval quality
+        - API contract
+        - Web UI
+        - Agent Skill
+        - Deployment
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional workarounds or other designs you considered.
+    validations:
+      required: false
