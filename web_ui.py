@@ -30,97 +30,10 @@ from scripts.add_documents import (
     DocumentProcessor,
     RESOURCE_DIRECTORY_NAMES,
     SUPPORTED_DOCUMENT_EXTENSIONS,
-    SUPPORTED_DOCUMENT_EXTENSIONS_TEXT,
 )
 from scripts.bm25_indexer import BM25Indexer
 from scripts.config_manager import get_config
-
-LANG = {
-    "zh": {
-        "app_title": "# 📚 RAG 知识库管理系统",
-        "tab_import": "文档入库",
-        "tab_docs": "文档列表",
-        "tab_search": "检索测试",
-        "tab_system": "系统管理",
-        "import_desc": f"输入服务器上的文件夹路径，系统自动递归扫描支持的文档并入库。\n\n✅ 支持 {SUPPORTED_DOCUMENT_EXTENSIONS_TEXT}\n✅ 图片引用完整保留\n✅ 扫描时已入库的文档会自动跳过。",
-        "folder_path": "文件夹路径",
-        "folder_placeholder": "如 D:\\docs 或 /home/user/docs",
-        "scan_btn": "📂 扫描文件",
-        "scan_result": "扫描结果",
-        "file_list": "扫描到的文件列表",
-        "import_settings": "### 入库设置",
-        "chunk_strategy": "分块策略",
-        "chunk_strategy_info": "title: 按标题分块, length: 按长度分块",
-        "chunk_size": "分块大小（字符数）",
-        "chunk_size_info": "仅 length 策略生效，默认 512",
-        "overlap_ratio": "重叠比例",
-        "overlap_ratio_info": "仅 length 策略生效，默认 0.1（10%）",
-        "import_btn": "🚀 开始入库",
-        "import_log": "入库日志",
-        "keyword_search": "关键词搜索",
-        "keyword_placeholder": "输入文档名关键词",
-        "status_filter": "状态筛选",
-        "all": "全部",
-        "active": "启用",
-        "inactive": "停用",
-        "refresh": "🔄 刷新",
-        "doc_id": "Corpus ID",
-        "doc_id_placeholder": "点击表格行自动填充",
-        "toggle_btn": "⏸ 停用/启用",
-        "delete_btn": "🗑 删除",
-        "action_result": "操作结果",
-        "search_title": "### 🔍 检索测试\n\n测试 RAG 检索效果，使用混合检索模式（BM25 + Dense + Sparse）。",
-        "query_label": "查询内容",
-        "query_placeholder": "如 机器学习基础概念、论文摘要检索",
-        "top_k": "返回结果数",
-        "use_rerank": "使用 Rerank",
-        "yes": "是",
-        "no": "否",
-        "search_btn": "🔍 开始检索",
-        "clear_btn": "🗑 清空",
-        "search_result": "检索结果",
-        "stats_tab": "统计信息",
-        "stats_refresh": "🔄 刷新统计",
-        "stats_info": "统计信息",
-        "reset_tab": "一键删库",
-        "reset_desc": "### ⚠️ 危险操作：清空所有数据\n\n此操作将：\n1. 清空 FAISS 索引文件\n2. 删除 SQLite 数据库文件并重新初始化\n\n**此操作不可恢复！**",
-        "reset_step1": "🗑 开始删库",
-        "reset_warning": "警告",
-        "confirm_code": "输入确认码",
-        "confirm_placeholder": "输入上方显示的确认码",
-        "reset_step2": "🔴 确认删库",
-        "reset_result": "删库结果",
-        "col_full_path": "完整路径",
-        "col_rel_path": "相对路径",
-        "col_status": "状态",
-        "col_id": "ID",
-        "col_name": "文档名",
-        "col_state": "状态",
-        "active_mark": "● 启用",
-        "inactive_mark": "○ 停用",
-        "total_docs": "文档总数",
-        "total_chunks": "分片总数",
-        "enter_query": "请输入查询内容",
-        "enter_folder": "请输入文件夹路径",
-        "enter_corpus_id": "请输入或选择 corpus_id",
-        "doc_not_found": "文档不存在",
-        "db_conn_fail": "数据库连接失败",
-        "deleted": "已删除",
-        "delete_fail": "删除失败",
-        "enabled": "启用",
-        "disabled": "停用",
-        "scan_files_first": "请先扫描文件夹",
-        "path_not_exist": "路径不存在或不是文件夹",
-        "no_md_files": f"文件夹中未找到支持的文档文件（{SUPPORTED_DOCUMENT_EXTENSIONS_TEXT}）",
-        "found_files": "找到 {count} 个文档（⏩新文档 {new}，✅已入库 {exist}）",
-        "reset_warning_text": "⚠️ 即将清空所有数据（SQLite + FAISS），此操作不可恢复！\n\n请输入确认码 ** {code} ** 后点击「确认删库」",
-        "confirm_wrong": "❌ 确认码不正确，操作已取消",
-        "reset_done": "[DONE] 数据库已重置为空库。",
-        "reset_timeout": "[ERROR] 删库脚本执行超时（60秒）",
-    }
-}
-
-_current_lang = "zh"
+from scripts.locales import LANGUAGE_CHOICES, normalize_lang, t
 
 
 ACADEMIC_PRIMARY = gr.themes.Color(
@@ -148,6 +61,10 @@ h1, h2, h3, h4 { color: #111827; letter-spacing: 0; }
 h1 { font-size: 1.8rem !important; font-weight: 700 !important; }
 .markdown h1 { border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; }
 .tab-nav button { font-weight: 600 !important; }
+.mr-header-row { align-items: start !important; gap: 16px !important; margin-bottom: 8px !important; }
+.mr-app-title h1 { border-bottom: 0 !important; padding-bottom: 0 !important; margin: 0 !important; }
+.mr-language-box { width: 260px !important; min-width: 240px !important; max-width: 280px !important; flex: 0 0 260px !important; margin-left: auto !important; }
+.mr-language-box .form { padding: 10px 12px !important; }
 table thead th { background-color: #F3F6FA !important; color: #111827 !important; font-weight: 600; }
 .mr-overview { display: grid; gap: 12px; }
 .mr-doc-group { border: 1px solid #D6DEE8; border-radius: 8px; overflow: hidden; background: #fff; }
@@ -185,11 +102,57 @@ table thead th { background-color: #F3F6FA !important; color: #111827 !important
 """
 
 
-def t(key, **kwargs):
-    text = LANG[_current_lang].get(key, key)
-    if kwargs:
-        text = text.format(**kwargs)
-    return text
+def _muted_html(text):
+    return f"<p style='color:#888;'>{html_lib.escape(text)}</p>"
+
+
+def _empty_images_html(lang):
+    return f"<div class='mr-current-images mr-empty-images'>{html_lib.escape(t('no_current_images', lang))}</div>"
+
+
+def _is_new_status(status):
+    return "新文档" in str(status) or "New document" in str(status)
+
+
+def _is_existing_status(status):
+    return "已入库" in str(status) or "Indexed" in str(status)
+
+
+def _table_to_rows(table_data):
+    if table_data is None:
+        return []
+    if hasattr(table_data, "empty") and table_data.empty:
+        return []
+    if isinstance(table_data, list):
+        return table_data
+    if hasattr(table_data, "values"):
+        return table_data.values.tolist()
+    return []
+
+
+def _localize_scan_rows(table_data, lang):
+    rows = []
+    for row in _table_to_rows(table_data):
+        next_row = list(row)
+        if len(next_row) > 2:
+            if _is_new_status(next_row[2]):
+                next_row[2] = t("new_doc", lang)
+            elif _is_existing_status(next_row[2]):
+                next_row[2] = t("existing_doc", lang)
+        rows.append(next_row)
+    return rows
+
+
+def _image_choice(index, lang):
+    return f"图片{index}" if normalize_lang(lang) == "zh" else f"Image {index}"
+
+
+def _chunk_option_label(chunk, index, lang):
+    doc_name = chunk.get("doc_name", t("unknown_doc", lang))
+    label = f"{doc_name} / {t('chunk_label_compact', lang, index=index + 1)}"
+    if chunk.get("title"):
+        label += f": {chunk.get('title')}"
+    return label
 
 
 _processor = None
@@ -262,18 +225,19 @@ def _get_new_paths_from_table(table_data):
     if len(table_data) == 0:
         return []
     if isinstance(table_data, list):
-        return [row[0] for row in table_data if len(row) > 2 and "新文档" in str(row[2])]
+        return [row[0] for row in table_data if len(row) > 2 and _is_new_status(row[2])]
     if table_data.shape[1] < 3:
         return table_data.iloc[:, 0].tolist()
-    return table_data[table_data.iloc[:, 2].astype(str).str.contains("新文档")].iloc[:, 0].tolist()
+    status_series = table_data.iloc[:, 2].astype(str)
+    return table_data[status_series.apply(_is_new_status)].iloc[:, 0].tolist()
 
 
-def scan_server_folder(folder_path):
+def scan_server_folder(folder_path, lang):
     if not folder_path:
-        return t("enter_folder"), []
+        return t("enter_folder", lang), []
     folder_path = os.path.abspath(folder_path.strip())
     if not os.path.isdir(folder_path):
-        return t("path_not_exist"), []
+        return t("path_not_exist", lang), []
     print(f"[WebUI] 扫描文件夹: {folder_path}")
 
     doc_files = []
@@ -286,7 +250,7 @@ def scan_server_folder(folder_path):
                 doc_files.append((full_path, rel_path))
 
     if not doc_files:
-        return t("no_md_files") + f": {folder_path}", []
+        return t("no_md_files", lang) + f": {folder_path}", []
 
     rows = []
     try:
@@ -303,26 +267,26 @@ def scan_server_folder(folder_path):
                 exists = db.get_corpus_by_path(full_path, cfg.to_relative_path(full_path)) is not None
             except Exception:
                 exists = False
-        status_mark = "✅已入库" if exists else "⏩新文档"
+        status_mark = t("existing_doc", lang) if exists else t("new_doc", lang)
         rows.append([full_path, rel_path, status_mark])
 
-    new_count = sum(1 for r in rows if "新文档" in r[2])
-    exist_count = sum(1 for r in rows if "已入库" in r[2])
+    new_count = sum(1 for r in rows if _is_new_status(r[2]))
+    exist_count = len(rows) - new_count
     print(f"[WebUI] 扫描完成，找到 {len(doc_files)} 个文件（新 {new_count}，已入库 {exist_count}）")
-    info = t("found_files", count=len(doc_files), new=new_count, exist=exist_count)
+    info = t("found_files", lang, count=len(doc_files), new=new_count, exist=exist_count)
     return info, rows
 
 
 _pending_chunks = []
 
 
-def _render_preview_html(chunks_data):
+def _render_preview_html(chunks_data, lang="zh"):
     if not chunks_data:
-        return "<p style='color:#888;'>无分片数据</p>"
+        return _muted_html(t("no_chunks", lang))
 
     doc_groups = {}
     for i, chunk in enumerate(chunks_data):
-        doc_name = chunk.get("doc_name", "未知文档")
+        doc_name = chunk.get("doc_name", t("unknown_doc", lang))
         if doc_name not in doc_groups:
             doc_groups[doc_name] = []
         doc_groups[doc_name].append((i, chunk))
@@ -332,7 +296,7 @@ def _render_preview_html(chunks_data):
         html.append(f"<div class='mr-doc-group'>")
         html.append(f"<div class='mr-doc-head'>")
         html.append(f"<span>{html_lib.escape(doc_name)}</span>")
-        html.append(f"<span>{len(doc_chunks)} 个分片</span>")
+        html.append(f"<span>{t('chunk_count', lang, count=len(doc_chunks))}</span>")
         html.append(f"</div>")
 
         for chunk_idx, chunk in doc_chunks:
@@ -345,14 +309,14 @@ def _render_preview_html(chunks_data):
             modified = (original_content and original_content != content) or (original_images and original_images != images_rel)
 
             html.append(f"<div class='mr-chunk-row'>")
-            html.append(f"<div class='mr-chunk-title'><span>分片 {i+1}</span>")
+            html.append(f"<div class='mr-chunk-title'><span>{t('chunk_label', lang, index=i + 1)}</span>")
             if modified:
-                html.append(f" <span class='mr-status'>已修改</span>")
+                html.append(f" <span class='mr-status'>{t('modified', lang)}</span>")
             if title:
                 html.append(f"<small>{html_lib.escape(title)}</small>")
             html.append(f"</div>")
             if images_rel:
-                html.append(f"<div class='mr-chunk-meta'>{len(images_rel)} 张图片</div>")
+                html.append(f"<div class='mr-chunk-meta'>{t('image_count', lang, count=len(images_rel))}</div>")
             snippet = re.sub(r'\s+', ' ', content).strip()
             html.append(f"<div class='mr-snippet'>{html_lib.escape(snippet[:180])}{'...' if len(snippet) > 180 else ''}</div>")
             html.append(f"</div>")
@@ -362,16 +326,16 @@ def _render_preview_html(chunks_data):
     return "".join(html)
 
 
-def _render_single_chunk_preview(chunk):
+def _render_single_chunk_preview(chunk, lang="zh"):
     if not chunk:
-        return "<p style='color:#888;'>请选择分片</p>"
+        return _muted_html(t("select_chunk", lang))
     cfg = get_config()
     images = [cfg.to_absolute_path(p) for p in chunk.get("images", [])]
     file_dir = os.path.dirname(chunk.get("file_path", "")) if chunk.get("file_path") else None
     title = chunk.get("title", "")
     html = ["<div class='mr-current-preview'>"]
     html.append("<div class='mr-current-head'>")
-    html.append(f"<strong>{html_lib.escape(chunk.get('doc_name', '未知文档'))}</strong>")
+    html.append(f"<strong>{html_lib.escape(chunk.get('doc_name', t('unknown_doc', lang)))}</strong>")
     if title:
         html.append(f"<span>{html_lib.escape(title)}</span>")
     html.append("</div>")
@@ -390,28 +354,28 @@ def _render_single_chunk_preview(chunk):
     return "".join(html)
 
 
-def _render_chunk_images_html(chunk):
+def _render_chunk_images_html(chunk, lang="zh"):
     if not chunk:
-        return "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>"
+        return _empty_images_html(lang)
     cfg = get_config()
     images = [cfg.to_absolute_path(p) for p in chunk.get("images", [])]
     valid_images = [(idx, img_path, _image_to_base64(img_path)) for idx, img_path in enumerate(images)]
     valid_images = [(idx, img_path, b64) for idx, img_path, b64 in valid_images if b64]
     if not valid_images:
-        return "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>"
+        return _empty_images_html(lang)
     html = ["<div class='mr-current-images'>"]
     for idx, img_path, b64 in valid_images:
         name = html_lib.escape(os.path.basename(img_path))
-        html.append(_render_zoomable_image(b64, f"图片{idx} {name}", img_path, idx, "mr-thumb"))
+        html.append(_render_zoomable_image(b64, f"{_image_choice(idx, lang)} {name}", img_path, idx, "mr-thumb"))
     html.append("</div>")
     return "".join(html)
 
 
-def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
+def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio, lang):
     global _pending_chunks
     file_paths = _get_new_paths_from_table(table_data)
     if not file_paths:
-        return "<p style='color:#888;'>请先扫描文件</p>", gr.update(visible=False), gr.update(visible=False), gr.update(choices=[], value=None), "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", json.dumps([])
+        return _muted_html(t("scan_files", lang)), gr.update(visible=False), gr.update(visible=False), gr.update(choices=[], value=None), "", _empty_images_html(lang), json.dumps([])
 
     processor = _get_processor()
     processor.chunk_strategy = chunk_strategy
@@ -436,7 +400,7 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
                 for idx, chunk_content in enumerate(chunks_content):
                     chunk_images = processor._extract_images_from_content(chunk_content, file_path, images, doc_format, image_map)
                     sections.append({
-                        "title": f"分片 {idx + 1}",
+                        "title": t("chunk_label", lang, index=idx + 1),
                         "title_level": 1,
                         "section_level": 1,
                         "content": chunk_content,
@@ -468,17 +432,10 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
             print(f"  [预览] 读取 {doc_name} 失败: {e}")
 
     if not _pending_chunks:
-        return "<p style='color:#888;'>未能生成任何分片</p>", gr.update(visible=False), gr.update(visible=False), gr.update(choices=[], value=None), "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", json.dumps([])
+        return _muted_html(t("no_generated_chunks", lang)), gr.update(visible=False), gr.update(visible=False), gr.update(choices=[], value=None), "", _empty_images_html(lang), json.dumps([])
 
-    preview_html = _render_preview_html(_pending_chunks)
-    chunk_choices = []
-    for i, chunk in enumerate(_pending_chunks):
-        doc_name = chunk.get("doc_name", "未知文档")
-        title = chunk.get("title", "")
-        label = f"{doc_name} / 分片{i+1}"
-        if title:
-            label += f": {title}"
-        chunk_choices.append(label)
+    preview_html = _render_preview_html(_pending_chunks, lang)
+    chunk_choices = [_chunk_option_label(chunk, i, lang) for i, chunk in enumerate(_pending_chunks)]
 
     return (
         preview_html,
@@ -486,7 +443,7 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
         gr.update(visible=True),
         gr.update(choices=chunk_choices, value=chunk_choices[0] if chunk_choices else None),
         _pending_chunks[0]["content"] if _pending_chunks else "",
-        _render_chunk_images_html(_pending_chunks[0] if _pending_chunks else None),
+        _render_chunk_images_html(_pending_chunks[0] if _pending_chunks else None, lang),
         json.dumps(_pending_chunks, ensure_ascii=False),
     )
 
@@ -494,7 +451,7 @@ def preview_chunks(table_data, chunk_strategy, chunk_size, overlap_ratio):
 def _parse_chunk_idx(chunk_selection):
     if not chunk_selection:
         return -1
-    match = re.search(r'分片(\d+)', chunk_selection)
+    match = re.search(r'(?:分片|chunk)\s*(\d+)', chunk_selection, flags=re.IGNORECASE)
     if match:
         return int(match.group(1)) - 1
     prefix = str(chunk_selection).split(":", 1)[0]
@@ -546,72 +503,70 @@ def _sync_images_after_text_edit(chunk, new_content):
     chunk["images"] = []
 
 
-def _on_chunk_selected(chunk_selection, chunks_json):
+def _on_chunk_selected(chunk_selection, chunks_json, lang):
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        return "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if not chunk_selection or not chunks_data:
-        return "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        return "", _empty_images_html(lang), gr.update(choices=[], value=None)
     try:
         idx = _parse_chunk_idx(chunk_selection)
     except (ValueError, IndexError):
-        return "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        return "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if 0 <= idx < len(chunks_data):
         chunk = chunks_data[idx]
-        img_choices = [f"图片{i}" for i in range(len(chunk.get("images", [])))]
-        return chunk.get("content", ""), _render_chunk_images_html(chunk), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
-    return "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        img_choices = [_image_choice(i, lang) for i in range(len(chunk.get("images", [])))]
+        return chunk.get("content", ""), _render_chunk_images_html(chunk, lang), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
+    return "", _empty_images_html(lang), gr.update(choices=[], value=None)
 
 
-def _on_next_chunk(chunk_selection, chunks_json):
+def _on_next_chunk(chunk_selection, chunks_json, lang):
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return gr.update(), "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        return gr.update(), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if not chunks_data:
-        return gr.update(), "", "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>", gr.update(choices=[], value=None)
+        return gr.update(), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     idx = _parse_chunk_idx(chunk_selection)
     next_idx = min(max(idx, -1) + 1, len(chunks_data) - 1)
     chunk = chunks_data[next_idx]
-    label = f"{chunk.get('doc_name', '未知文档')} / 分片{next_idx + 1}"
-    if chunk.get("title"):
-        label += f": {chunk.get('title')}"
-    img_choices = [f"图片{i}" for i in range(len(chunk.get("images", [])))]
-    return gr.update(value=label), chunk.get("content", ""), _render_chunk_images_html(chunk), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
+    label = _chunk_option_label(chunk, next_idx, lang)
+    img_choices = [_image_choice(i, lang) for i in range(len(chunk.get("images", [])))]
+    return gr.update(value=label), chunk.get("content", ""), _render_chunk_images_html(chunk, lang), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
 
 
-def _on_update_chunk(chunk_selection, new_content, chunks_json):
+def _on_update_chunk(chunk_selection, new_content, chunks_json, lang):
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return chunks_json, "<p style='color:#888;'>更新失败</p>", "<div class='mr-current-images mr-empty-images'>更新失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("update_failed", lang)), _empty_images_html(lang), gr.update(choices=[], value=None)
     if not chunk_selection or not chunks_data:
-        return chunks_json, "<p style='color:#888;'>更新失败</p>", "<div class='mr-current-images mr-empty-images'>更新失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("update_failed", lang)), _empty_images_html(lang), gr.update(choices=[], value=None)
     try:
         idx = _parse_chunk_idx(chunk_selection)
     except (ValueError, IndexError):
-        return chunks_json, "<p style='color:#888;'>更新失败</p>", "<div class='mr-current-images mr-empty-images'>更新失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("update_failed", lang)), _empty_images_html(lang), gr.update(choices=[], value=None)
     if 0 <= idx < len(chunks_data):
         _sync_images_after_text_edit(chunks_data[idx], new_content)
         chunks_data[idx]["content"] = new_content
-        preview_html = _render_preview_html(chunks_data)
-        img_choices = [f"图片{i}" for i in range(len(chunks_data[idx].get("images", [])))]
-        return json.dumps(chunks_data, ensure_ascii=False), preview_html, _render_chunk_images_html(chunks_data[idx]), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
-    return chunks_json, "<p style='color:#888;'>更新失败</p>", "<div class='mr-current-images mr-empty-images'>更新失败</div>", gr.update(choices=[], value=None)
+        preview_html = _render_preview_html(chunks_data, lang)
+        img_choices = [_image_choice(i, lang) for i in range(len(chunks_data[idx].get("images", [])))]
+        return json.dumps(chunks_data, ensure_ascii=False), preview_html, _render_chunk_images_html(chunks_data[idx], lang), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
+    return chunks_json, _muted_html(t("update_failed", lang)), _empty_images_html(lang), gr.update(choices=[], value=None)
 
 
-def _on_revert_chunk(chunk_selection, chunks_json):
+def _on_revert_chunk(chunk_selection, chunks_json, lang):
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return chunks_json, "<p style='color:#888;'>还原失败</p>", "", "<div class='mr-current-images mr-empty-images'>还原失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("revert_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if not chunk_selection or not chunks_data:
-        return chunks_json, "<p style='color:#888;'>还原失败</p>", "", "<div class='mr-current-images mr-empty-images'>还原失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("revert_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     try:
         idx = _parse_chunk_idx(chunk_selection)
     except (ValueError, IndexError):
-        return chunks_json, "<p style='color:#888;'>还原失败</p>", "", "<div class='mr-current-images mr-empty-images'>还原失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("revert_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if 0 <= idx < len(chunks_data):
         original = chunks_data[idx].get("original_content")
         if original is not None:
@@ -619,30 +574,31 @@ def _on_revert_chunk(chunk_selection, chunks_json):
         original_images = chunks_data[idx].get("original_images")
         if original_images is not None:
             chunks_data[idx]["images"] = list(original_images)
-        preview_html = _render_preview_html(chunks_data)
-        img_choices = [f"图片{i}" for i in range(len(chunks_data[idx].get("images", [])))]
-        return json.dumps(chunks_data, ensure_ascii=False), preview_html, chunks_data[idx]["content"], _render_chunk_images_html(chunks_data[idx]), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
-    return chunks_json, "<p style='color:#888;'>还原失败</p>", "", "<div class='mr-current-images mr-empty-images'>还原失败</div>", gr.update(choices=[], value=None)
+        preview_html = _render_preview_html(chunks_data, lang)
+        img_choices = [_image_choice(i, lang) for i in range(len(chunks_data[idx].get("images", [])))]
+        return json.dumps(chunks_data, ensure_ascii=False), preview_html, chunks_data[idx]["content"], _render_chunk_images_html(chunks_data[idx], lang), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
+    return chunks_json, _muted_html(t("revert_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
 
 
-def _on_delete_chunk_image(chunk_selection, image_index, chunks_json):
+def _on_delete_chunk_image(chunk_selection, image_index, chunks_json, lang):
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return chunks_json, "<p style='color:#888;'>删除失败</p>", "", "<div class='mr-current-images mr-empty-images'>删除失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("delete_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if not chunk_selection or not chunks_data:
-        return chunks_json, "<p style='color:#888;'>删除失败</p>", "", "<div class='mr-current-images mr-empty-images'>删除失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("delete_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     try:
         idx = _parse_chunk_idx(chunk_selection)
     except (ValueError, IndexError):
-        return chunks_json, "<p style='color:#888;'>删除失败</p>", "", "<div class='mr-current-images mr-empty-images'>删除失败</div>", gr.update(choices=[], value=None)
+        return chunks_json, _muted_html(t("delete_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
     if 0 <= idx < len(chunks_data):
         images = chunks_data[idx].get("images", [])
         content = chunks_data[idx].get("content", "")
         img_idx = -1
-        if isinstance(image_index, str) and image_index.startswith("图片"):
+        if isinstance(image_index, str) and (image_index.startswith("图片") or image_index.startswith("Image")):
             try:
-                img_idx = int(image_index.replace("图片", ""))
+                nums = re.findall(r'\d+', image_index)
+                img_idx = int(nums[-1]) if nums else -1
             except ValueError:
                 img_idx = -1
         elif isinstance(image_index, str):
@@ -666,20 +622,20 @@ def _on_delete_chunk_image(chunk_selection, image_index, chunks_json):
                     content = content[:start] + content[end:]
                     chunks_data[idx]["content"] = content
 
-        preview_html = _render_preview_html(chunks_data)
-        img_choices = [f"图片{i}" for i in range(len(chunks_data[idx].get("images", [])))]
-        return json.dumps(chunks_data, ensure_ascii=False), preview_html, chunks_data[idx]["content"], _render_chunk_images_html(chunks_data[idx]), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
-    return chunks_json, "<p style='color:#888;'>删除失败</p>", "", "<div class='mr-current-images mr-empty-images'>删除失败</div>", gr.update(choices=[], value=None)
+        preview_html = _render_preview_html(chunks_data, lang)
+        img_choices = [_image_choice(i, lang) for i in range(len(chunks_data[idx].get("images", [])))]
+        return json.dumps(chunks_data, ensure_ascii=False), preview_html, chunks_data[idx]["content"], _render_chunk_images_html(chunks_data[idx], lang), gr.update(choices=img_choices, value=img_choices[0] if img_choices else None)
+    return chunks_json, _muted_html(t("delete_failed", lang)), "", _empty_images_html(lang), gr.update(choices=[], value=None)
 
 
-def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
+def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio, lang):
     global _pending_chunks
     try:
         chunks_data = json.loads(chunks_json)
     except Exception:
-        return "❌ 无可入库的分片数据"
+        return t("no_importable_chunks", lang)
     if not chunks_data:
-        return "❌ 无可入库的分片数据"
+        return t("no_importable_chunks", lang)
 
     processor = _get_processor()
     processor.chunk_strategy = chunk_strategy
@@ -701,14 +657,14 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
 
         if doc_key not in docs_added:
             if processor._is_document_exists(file_path):
-                results.append(f"⏭ 文档已存在，跳过: {doc_name}")
+                results.append(t("doc_exists_skip", lang, doc_name=doc_name))
                 continue
             corpus = Corpus(
                 file_path=file_path,
                 name=doc_name,
-                type="文档",
+                type=t("doc_type", lang),
                 data_summary=chunk.get("content", "")[:500],
-                source="Web审核入库",
+                source=t("web_review_source", lang),
                 relative_path=config.to_relative_path(file_path),
                 chunk_strategy=chunk_strategy,
             )
@@ -745,7 +701,7 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
         processor.db.update_corpus_chunk_count(info["corpus_id"], info["chunk_count"])
 
     if not all_chunks:
-        return "❌ 无有效分片可入库"
+        return t("no_valid_chunks", lang)
 
     try:
         chunk_texts = [c["chunk_text"] for c in all_chunks]
@@ -753,7 +709,7 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
 
         vector_id = processor.existing_vector_count
 
-        for chunk in tqdm(all_chunks, desc="保存分片"):
+        for chunk in tqdm(all_chunks, desc=t("saving_chunks", lang)):
             chunk_record = Chunk(
                 corpus_id=chunk["corpus_id"],
                 chunk_index=chunk["chunk_index"],
@@ -789,7 +745,7 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
 
         processor.sparse_index = processor.build_sparse_index(processor.sparse_vectors)
 
-        print("正在构建 BM25 索引...")
+        print(t("indexing_bm25", lang))
         if processor.append_mode and processor.existing_vector_count > 0:
             existing_bm25 = BM25Indexer(processor.faiss_index_path)
             if existing_bm25.load():
@@ -809,37 +765,37 @@ def confirm_import(chunks_json, chunk_strategy, chunk_size, overlap_ratio):
         processor.save_faiss_index()
         _reset_retriever()
 
-        results.append(f"✅ 入库完成: {len(all_chunks)} 个分片, {len(docs_added)} 个文档, {processor.faiss_index.ntotal} 条向量")
+        results.append(t("import_done", lang, chunks=len(all_chunks), docs=len(docs_added), vectors=processor.faiss_index.ntotal))
     except Exception as e:
         for info in docs_added.values():
             try:
                 processor.db.delete_corpus(info["corpus_id"])
             except Exception:
                 pass
-        results.append(f"❌ 向量索引更新失败: {str(e)}")
+        results.append(t("index_update_failed", lang, error=str(e)))
 
     _pending_chunks = []
     return "\n".join(results)
 
 
-def cancel_import():
+def cancel_import(lang):
     global _pending_chunks
     _pending_chunks = []
     return (
-        "<p style='color:#888;'>已取消，无待入库数据</p>",
+        _muted_html(t("import_cancelled", lang)),
         gr.update(visible=False),
         gr.update(visible=False),
         gr.update(choices=[], value=None),
         "",
-        "<div class='mr-current-images mr-empty-images'>当前分片无图片</div>",
+        _empty_images_html(lang),
         json.dumps([]),
     )
 
 
-def do_import(table_data, chunk_strategy, chunk_size, overlap_ratio):
+def do_import(table_data, chunk_strategy, chunk_size, overlap_ratio, lang):
     file_paths = _get_new_paths_from_table(table_data)
     if not file_paths:
-        return t("scan_files_first")
+        return t("scan_files_first", lang)
     print(f"[WebUI] 入库: {len(file_paths)} 个文件")
 
     processor = _get_processor()
@@ -913,7 +869,7 @@ def do_import(table_data, chunk_strategy, chunk_size, overlap_ratio):
 
             processor.sparse_index = processor.build_sparse_index(processor.sparse_vectors)
 
-            print("正在构建 BM25 索引...")
+            print(t("indexing_bm25", lang))
             if processor.append_mode and processor.existing_vector_count > 0:
                 existing_bm25 = BM25Indexer(processor.faiss_index_path)
                 if existing_bm25.load():
@@ -933,24 +889,24 @@ def do_import(table_data, chunk_strategy, chunk_size, overlap_ratio):
             processor.save_faiss_index()
             _reset_retriever()
 
-            results.append(f"\n📊 向量索引已更新: 共 {len(all_chunks)} 个分片, {processor.faiss_index.ntotal} 条向量")
+            results.append("\n" + t("index_updated", lang, chunks=len(all_chunks), vectors=processor.faiss_index.ntotal))
         except Exception as e:
             for chunk in all_chunks:
                 try:
                     processor.db.delete_corpus(chunk["corpus_id"])
                 except Exception:
                     pass
-            results.append(f"\n❌ 向量索引更新失败: {str(e)}")
+            results.append("\n" + t("index_update_failed", lang, error=str(e)))
 
     return "\n".join(results)
 
 
-def load_documents(keyword="", status_filter="全部"):
+def load_documents(keyword="", status_filter="全部", lang="zh"):
     global _cached_docs_data
     try:
         _, dm = _get_managers()
     except Exception as e:
-        return [[f"{t('db_conn_fail')}: {e}", "", ""]]
+        return [[f"{t('db_conn_fail', lang)}: {e}", "", ""]]
     docs = dm.list_documents(limit=500)
     if keyword:
         docs = [d for d in docs if keyword.lower() in d.get("name", "").lower()]
@@ -968,51 +924,51 @@ def load_documents(keyword="", status_filter="全部"):
         rows.append([
             doc["id"],
             doc["name"][:80],
-            t("active_mark") if is_active else t("inactive_mark"),
+            t("active_mark", lang) if is_active else t("inactive_mark", lang),
         ])
     _cached_docs_data = rows
     return rows
 
 
-def delete_doc(corpus_id):
+def delete_doc(corpus_id, lang):
     if not corpus_id:
-        return t("enter_corpus_id")
+        return t("enter_corpus_id", lang)
     try:
         _, dm = _get_managers()
     except Exception as e:
-        return f"{t('db_conn_fail')}: {e}"
+        return f"{t('db_conn_fail', lang)}: {e}"
     faiss_path = get_config().faiss_index_path
     success = dm.delete_document(corpus_id, confirm=False, faiss_index_path=faiss_path)
     if success:
         _reset_retriever()
-    return f"{t('deleted')}: {corpus_id}" if success else f"{t('delete_fail')}: {corpus_id}"
+    return f"{t('deleted', lang)}: {corpus_id}" if success else f"{t('delete_fail', lang)}: {corpus_id}"
 
 
-def toggle_doc_status(corpus_id):
+def toggle_doc_status(corpus_id, lang):
     if not corpus_id:
-        return t("enter_corpus_id")
+        return t("enter_corpus_id", lang)
     try:
         db, dm = _get_managers()
     except Exception as e:
-        return f"{t('db_conn_fail')}: {e}"
+        return f"{t('db_conn_fail', lang)}: {e}"
     doc = dm.get_document_detail(corpus_id)
     if not doc:
-        return f"{t('doc_not_found')}: {corpus_id}"
+        return f"{t('doc_not_found', lang)}: {corpus_id}"
     new_status = not doc.get("is_active", True)
     db.toggle_corpus_active(corpus_id)
-    status_text = t("enabled") if new_status else t("disabled")
+    status_text = t("enabled", lang) if new_status else t("disabled", lang)
     return f"{status_text}: {corpus_id}"
 
 
-def load_stats():
+def load_stats(lang):
     try:
         _, dm = _get_managers()
     except Exception as e:
-        return f"{t('db_conn_fail')}: {e}"
+        return f"{t('db_conn_fail', lang)}: {e}"
     stats = dm.get_statistics()
     lines = [
-        f"{t('total_docs')}: {stats.get('corpus', 0)}",
-        f"{t('total_chunks')}: {stats.get('chunks', 0)}",
+        f"{t('total_docs', lang)}: {stats.get('corpus', 0)}",
+        f"{t('total_chunks', lang)}: {stats.get('chunks', 0)}",
     ]
     return "\n".join(lines)
 
@@ -1177,16 +1133,16 @@ def _render_content_html(content, images=None, file_dir=None, show_placeholder_t
     return "".join(parts)
 
 
-def do_retrieve(query, top_k, use_rerank):
+def do_retrieve(query, top_k, use_rerank, lang):
     if not query or not query.strip():
-        return t("enter_query")
+        return t("enter_query", lang)
     query = query.strip()
     try:
         top_k = int(top_k) if top_k else 5
     except (ValueError, TypeError):
         top_k = 5
 
-    use_rerank = (use_rerank in ("是", "Yes"))
+    use_rerank = (use_rerank in (t("yes", lang), "是", "Yes"))
 
     try:
         retriever = _get_retriever()
@@ -1199,7 +1155,7 @@ def do_retrieve(query, top_k, use_rerank):
 
         docs = result.docs
         if not docs:
-            return "<p style='color:#888;'>未找到相关文档</p>"
+            return _muted_html(t("no_results", lang))
 
         html_parts = []
         for i, doc in enumerate(docs, 1):
@@ -1215,7 +1171,7 @@ def do_retrieve(query, top_k, use_rerank):
             html_parts.append(f"<div class='mr-result-card'>")
             html_parts.append(f"<div class='mr-result-head'><span>{i}. {html_lib.escape(doc_name)}</span>{score_info}</div>")
             if title:
-                html_parts.append(f"<div class='mr-result-title'>标题: {html_lib.escape(title)}</div>")
+                html_parts.append(f"<div class='mr-result-title'>{t('result_title', lang)}: {html_lib.escape(title)}</div>")
             html_parts.append(f"<div class='mr-result-body'>")
             html_parts.append(_render_content_html(content, images))
             html_parts.append("</div>")
@@ -1239,21 +1195,21 @@ def _on_doc_table_select(evt: gr.SelectData):
     return ""
 
 
-def reset_database_step1():
+def reset_database_step1(lang):
     global _reset_code
     import secrets
     _reset_code = secrets.token_hex(4).upper()
-    warn_text = t("reset_warning_text", code=_reset_code)
+    warn_text = t("reset_warning_text", lang, code=_reset_code)
     return warn_text, gr.update(visible=True)
 
 
-def reset_database_step2(confirm_text):
+def reset_database_step2(confirm_text, lang):
     global _reset_code
     confirm_value = (confirm_text or "").strip().upper()
     expected_code = globals().get("_reset_code", "")
     if not expected_code or confirm_value != expected_code:
         _reset_code = ""
-        return t("confirm_wrong"), gr.update(visible=False)
+        return t("confirm_wrong", lang), gr.update(visible=False)
 
     _reset_code = ""
     _reset_managers()
@@ -1275,18 +1231,27 @@ def reset_database_step2(confirm_text):
         if result.returncode != 0:
             error = result.stderr.strip()
             return f"[ERROR] Reset failed (exit code {result.returncode})\n\n{output}\n\n{error}", gr.update(visible=False)
-        return output + f"\n\n{t('reset_done')}", gr.update(visible=False)
+        return output + f"\n\n{t('reset_done', lang)}", gr.update(visible=False)
     except subprocess.TimeoutExpired:
-        return t("reset_timeout"), gr.update(visible=False)
+        return t("reset_timeout", lang), gr.update(visible=False)
     except Exception as e:
         return f"[ERROR] {e}", gr.update(visible=False)
 
 
 with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
-    gr.Markdown(t("app_title"))
+    ui_lang = gr.State("zh")
+    with gr.Row(elem_classes=["mr-header-row"]):
+        with gr.Column(scale=1, min_width=320):
+            app_title_md = gr.Markdown(t("app_title"), elem_classes=["mr-app-title"])
+        with gr.Column(scale=0, min_width=260, elem_classes=["mr-language-box"]):
+            language_select = gr.Dropdown(
+                choices=LANGUAGE_CHOICES,
+                value="zh",
+                label=t("language"),
+            )
 
     with gr.Tabs():
-        with gr.TabItem("文档入库"):
+        with gr.TabItem(t("tab_import")) as tab_import:
             import_desc_md = gr.Markdown(t("import_desc"))
 
             with gr.Row():
@@ -1335,84 +1300,85 @@ with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
                 outputs=[length_params_col],
             )
 
-            import_btn = gr.Button("👀 预览分片", variant="primary")
+            import_btn = gr.Button(t("preview_btn"), variant="primary")
             preview_html = gr.HTML(visible=False)
             chunks_state = gr.State("[]")
 
             with gr.Column(visible=False) as edit_col:
-                gr.Markdown("### ✏️ 分片编辑面板")
+                edit_panel_md = gr.Markdown(t("edit_panel"))
                 with gr.Row():
-                    chunk_selector = gr.Dropdown(label="选择分片", choices=[], scale=3)
-                    btn_next_chunk = gr.Button("下一片", variant="secondary", scale=1)
+                    chunk_selector = gr.Dropdown(label=t("chunk_select"), choices=[], scale=3)
+                    btn_next_chunk = gr.Button(t("next_chunk"), variant="secondary", scale=1)
                 with gr.Row():
-                    edit_content = gr.Textbox(label="分片内容（删除 <<IMAGE:xxxx>> 或 Markdown 图片语法后保存，即删除对应图片）", lines=14, scale=3)
+                    edit_content = gr.Textbox(label=t("edit_content"), lines=14, scale=3)
                 with gr.Row():
-                    edit_images_html = gr.HTML(label="当前分片图片")
+                    edit_images_html = gr.HTML(label=t("current_chunk_images"))
                 with gr.Row():
-                    img_delete_idx = gr.Dropdown(label="删除第几张图片", choices=[], scale=1)
-                    btn_delete_img = gr.Button("🗑 删除图片", variant="secondary", scale=1)
-                    btn_update_chunk = gr.Button("💾 保存修改", variant="primary", scale=1)
-                    btn_revert_chunk = gr.Button("↩️ 还原", variant="secondary", scale=1)
+                    img_delete_idx = gr.Dropdown(label=t("delete_image_index"), choices=[], scale=1)
+                    btn_delete_img = gr.Button(t("delete_image_btn"), variant="secondary", scale=1)
+                    btn_update_chunk = gr.Button(t("save_chunk"), variant="primary", scale=1)
+                    btn_revert_chunk = gr.Button(t("revert_chunk"), variant="secondary", scale=1)
 
             with gr.Row(visible=False) as confirm_row:
-                btn_confirm_import = gr.Button("✅ 确认入库", variant="primary")
-                btn_cancel_import = gr.Button("❌ 取消", variant="secondary")
+                btn_confirm_import = gr.Button(t("confirm_import"), variant="primary")
+                btn_cancel_import = gr.Button(t("cancel"), variant="secondary")
             import_log = gr.Textbox(label=t("import_log"), interactive=False, lines=6)
 
             scan_btn.click(
                 fn=scan_server_folder,
-                inputs=server_folder,
+                inputs=[server_folder, ui_lang],
                 outputs=[scan_info, server_file_table],
             )
 
             import_btn.click(
                 fn=preview_chunks,
-                inputs=[server_file_table, chunk_strategy, chunk_size, overlap_ratio],
+                inputs=[server_file_table, chunk_strategy, chunk_size, overlap_ratio, ui_lang],
                 outputs=[preview_html, edit_col, confirm_row, chunk_selector, edit_content, edit_images_html, chunks_state],
             )
 
             chunk_selector.change(
                 fn=_on_chunk_selected,
-                inputs=[chunk_selector, chunks_state],
+                inputs=[chunk_selector, chunks_state, ui_lang],
                 outputs=[edit_content, edit_images_html, img_delete_idx],
             )
 
             btn_next_chunk.click(
                 fn=_on_next_chunk,
-                inputs=[chunk_selector, chunks_state],
+                inputs=[chunk_selector, chunks_state, ui_lang],
                 outputs=[chunk_selector, edit_content, edit_images_html, img_delete_idx],
             )
 
             btn_update_chunk.click(
                 fn=_on_update_chunk,
-                inputs=[chunk_selector, edit_content, chunks_state],
+                inputs=[chunk_selector, edit_content, chunks_state, ui_lang],
                 outputs=[chunks_state, preview_html, edit_images_html, img_delete_idx],
             )
 
             btn_delete_img.click(
                 fn=_on_delete_chunk_image,
-                inputs=[chunk_selector, img_delete_idx, chunks_state],
+                inputs=[chunk_selector, img_delete_idx, chunks_state, ui_lang],
                 outputs=[chunks_state, preview_html, edit_content, edit_images_html, img_delete_idx],
             )
 
             btn_revert_chunk.click(
                 fn=_on_revert_chunk,
-                inputs=[chunk_selector, chunks_state],
+                inputs=[chunk_selector, chunks_state, ui_lang],
                 outputs=[chunks_state, preview_html, edit_content, edit_images_html, img_delete_idx],
             )
 
             btn_confirm_import.click(
                 fn=confirm_import,
-                inputs=[chunks_state, chunk_strategy, chunk_size, overlap_ratio],
+                inputs=[chunks_state, chunk_strategy, chunk_size, overlap_ratio, ui_lang],
                 outputs=import_log,
             )
 
             btn_cancel_import.click(
                 fn=cancel_import,
+                inputs=ui_lang,
                 outputs=[preview_html, edit_col, confirm_row, chunk_selector, edit_content, edit_images_html, chunks_state],
             )
 
-        with gr.TabItem("文档列表"):
+        with gr.TabItem(t("tab_docs")) as tab_docs:
             with gr.Row():
                 doc_keyword = gr.Textbox(label=t("keyword_search"), placeholder=t("keyword_placeholder"))
                 doc_status = gr.Dropdown(
@@ -1442,26 +1408,26 @@ with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
             )
             doc_refresh.click(
                 fn=load_documents,
-                inputs=[doc_keyword, doc_status],
+                inputs=[doc_keyword, doc_status, ui_lang],
                 outputs=doc_table,
             )
             doc_keyword.submit(
                 fn=load_documents,
-                inputs=[doc_keyword, doc_status],
+                inputs=[doc_keyword, doc_status, ui_lang],
                 outputs=doc_table,
             )
             btn_delete.click(
                 fn=delete_doc,
-                inputs=doc_id_input,
+                inputs=[doc_id_input, ui_lang],
                 outputs=doc_action_msg,
             )
             btn_toggle.click(
                 fn=toggle_doc_status,
-                inputs=doc_id_input,
+                inputs=[doc_id_input, ui_lang],
                 outputs=doc_action_msg,
             )
 
-        with gr.TabItem("检索测试"):
+        with gr.TabItem(t("tab_search")) as tab_search:
             search_desc_md = gr.Markdown(t("search_title"))
             with gr.Row():
                 retrieve_query = gr.Textbox(
@@ -1479,7 +1445,7 @@ with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
 
             retrieve_btn.click(
                 fn=do_retrieve,
-                inputs=[retrieve_query, retrieve_topk, retrieve_rerank],
+                inputs=[retrieve_query, retrieve_topk, retrieve_rerank, ui_lang],
                 outputs=retrieve_result,
             )
             btn_clear_retrieve.click(
@@ -1487,14 +1453,14 @@ with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
                 outputs=[retrieve_query, retrieve_result],
             )
 
-        with gr.TabItem("系统管理"):
+        with gr.TabItem(t("tab_system")) as tab_system:
             with gr.Tabs():
-                with gr.TabItem("统计信息"):
+                with gr.TabItem(t("stats_tab")) as tab_stats:
                     stats_refresh = gr.Button(t("stats_refresh"), variant="secondary")
                     stats_text = gr.Textbox(label=t("stats_info"), interactive=False, lines=10)
-                    stats_refresh.click(fn=load_stats, outputs=stats_text)
+                    stats_refresh.click(fn=load_stats, inputs=ui_lang, outputs=stats_text)
 
-                with gr.TabItem("一键删库"):
+                with gr.TabItem(t("reset_tab")) as tab_reset:
                     reset_desc_md = gr.Markdown(t("reset_desc"))
                     btn_reset_step1 = gr.Button(t("reset_step1"), variant="stop")
                     reset_warning = gr.Textbox(label=t("reset_warning"), interactive=False)
@@ -1505,13 +1471,143 @@ with gr.Blocks(title="RAG 知识库管理", analytics_enabled=False) as app:
 
                     btn_reset_step1.click(
                         fn=reset_database_step1,
+                        inputs=ui_lang,
                         outputs=[reset_warning, reset_confirm_row],
                     )
                     btn_reset_step2.click(
                         fn=reset_database_step2,
-                        inputs=reset_confirm_text,
+                        inputs=[reset_confirm_text, ui_lang],
                         outputs=[reset_result, reset_confirm_row],
                     )
+
+    def on_language_change(lang, scan_table_data, doc_keyword_value, doc_status_value):
+        lang = normalize_lang(lang)
+        scan_rows = _localize_scan_rows(scan_table_data, lang)
+        doc_rows = load_documents(doc_keyword_value or "", doc_status_value or t("all", lang), lang)
+        return (
+            lang,
+            gr.update(value=t("app_title", lang)),
+            gr.update(label=t("language", lang), value=lang),
+            gr.update(label=t("tab_import", lang)),
+            gr.update(label=t("tab_docs", lang)),
+            gr.update(label=t("tab_search", lang)),
+            gr.update(label=t("tab_system", lang)),
+            gr.update(label=t("stats_tab", lang)),
+            gr.update(label=t("reset_tab", lang)),
+            gr.update(value=t("import_desc", lang)),
+            gr.update(label=t("folder_path", lang), placeholder=t("folder_placeholder", lang)),
+            gr.update(value=t("scan_btn", lang)),
+            gr.update(label=t("scan_result", lang)),
+            gr.update(
+                value=scan_rows,
+                headers=[t("col_full_path", lang), t("col_rel_path", lang), t("col_status", lang)],
+                label=t("file_list", lang),
+            ),
+            gr.update(value=t("import_settings", lang)),
+            gr.update(label=t("chunk_strategy", lang), info=t("chunk_strategy_info", lang)),
+            gr.update(label=t("chunk_size", lang), info=t("chunk_size_info", lang)),
+            gr.update(label=t("overlap_ratio", lang), info=t("overlap_ratio_info", lang)),
+            gr.update(value=t("preview_btn", lang)),
+            gr.update(value=t("edit_panel", lang)),
+            gr.update(label=t("chunk_select", lang)),
+            gr.update(value=t("next_chunk", lang)),
+            gr.update(label=t("edit_content", lang)),
+            gr.update(label=t("current_chunk_images", lang)),
+            gr.update(label=t("delete_image_index", lang)),
+            gr.update(value=t("delete_image_btn", lang)),
+            gr.update(value=t("save_chunk", lang)),
+            gr.update(value=t("revert_chunk", lang)),
+            gr.update(value=t("confirm_import", lang)),
+            gr.update(value=t("cancel", lang)),
+            gr.update(label=t("import_log", lang)),
+            gr.update(label=t("keyword_search", lang), placeholder=t("keyword_placeholder", lang)),
+            gr.update(choices=[t("all", lang), t("active", lang), t("inactive", lang)], value=t("all", lang), label=t("status_filter", lang)),
+            gr.update(value=t("refresh", lang)),
+            gr.update(
+                value=doc_rows,
+                headers=[t("col_id", lang), t("col_name", lang), t("col_state", lang)],
+            ),
+            gr.update(label=t("doc_id", lang), placeholder=t("doc_id_placeholder", lang)),
+            gr.update(value=t("toggle_btn", lang)),
+            gr.update(value=t("delete_btn", lang)),
+            gr.update(label=t("action_result", lang)),
+            gr.update(value=t("search_title", lang)),
+            gr.update(label=t("query_label", lang), placeholder=t("query_placeholder", lang)),
+            gr.update(label=t("top_k", lang)),
+            gr.update(choices=[t("yes", lang), t("no", lang)], value=t("yes", lang), label=t("use_rerank", lang)),
+            gr.update(value=t("search_btn", lang)),
+            gr.update(value=t("clear_btn", lang)),
+            gr.update(label=t("search_result", lang)),
+            gr.update(value=t("stats_refresh", lang)),
+            gr.update(label=t("stats_info", lang)),
+            gr.update(value=t("reset_desc", lang)),
+            gr.update(value=t("reset_step1", lang)),
+            gr.update(label=t("reset_warning", lang)),
+            gr.update(label=t("confirm_code", lang), placeholder=t("confirm_placeholder", lang)),
+            gr.update(value=t("reset_step2", lang)),
+            gr.update(label=t("reset_result", lang)),
+        )
+
+    language_select.change(
+        fn=on_language_change,
+        inputs=[language_select, server_file_table, doc_keyword, doc_status],
+        outputs=[
+            ui_lang,
+            app_title_md,
+            language_select,
+            tab_import,
+            tab_docs,
+            tab_search,
+            tab_system,
+            tab_stats,
+            tab_reset,
+            import_desc_md,
+            server_folder,
+            scan_btn,
+            scan_info,
+            server_file_table,
+            import_settings_md,
+            chunk_strategy,
+            chunk_size,
+            overlap_ratio,
+            import_btn,
+            edit_panel_md,
+            chunk_selector,
+            btn_next_chunk,
+            edit_content,
+            edit_images_html,
+            img_delete_idx,
+            btn_delete_img,
+            btn_update_chunk,
+            btn_revert_chunk,
+            btn_confirm_import,
+            btn_cancel_import,
+            import_log,
+            doc_keyword,
+            doc_status,
+            doc_refresh,
+            doc_table,
+            doc_id_input,
+            btn_toggle,
+            btn_delete,
+            doc_action_msg,
+            search_desc_md,
+            retrieve_query,
+            retrieve_topk,
+            retrieve_rerank,
+            retrieve_btn,
+            btn_clear_retrieve,
+            retrieve_result,
+            stats_refresh,
+            stats_text,
+            reset_desc_md,
+            btn_reset_step1,
+            reset_warning,
+            reset_confirm_text,
+            btn_reset_step2,
+            reset_result,
+        ],
+    )
 
 
 
@@ -1543,6 +1639,10 @@ h2 { font-size: 1.3rem !important; font-weight: 600 !important; }
 h3 { font-size: 1.1rem !important; }
 .markdown h1 { border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; }
 .tab-nav button { font-weight: 600 !important; }
+.mr-header-row { align-items: start !important; gap: 16px !important; margin-bottom: 8px !important; }
+.mr-app-title h1 { border-bottom: 0 !important; padding-bottom: 0 !important; margin: 0 !important; }
+.mr-language-box { width: 260px !important; min-width: 240px !important; max-width: 280px !important; flex: 0 0 260px !important; margin-left: auto !important; }
+.mr-language-box .form { padding: 10px 12px !important; }
 table thead th { background-color: #F3F6FA !important; color: #111827 !important; font-weight: 600; }
 .mr-overview { display: grid; gap: 12px; }
 .mr-doc-group { border: 1px solid #D6DEE8; border-radius: 8px; overflow: hidden; background: #fff; }
