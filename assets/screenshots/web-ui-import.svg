@@ -1,40 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
-  <title id="title">miniR document ingestion UI screenshot</title>
-  <desc id="desc">Illustrative screenshot of the miniR Web UI document ingestion and review workflow.</desc>
-  <rect width="1280" height="760" fill="#f5f7fb"/>
-  <rect x="48" y="44" width="1184" height="672" rx="8" fill="#ffffff" stroke="#d8dee9"/>
-  <rect x="48" y="44" width="1184" height="64" rx="8" fill="#111827"/>
-  <text x="82" y="84" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">miniR</text>
-  <text x="166" y="84" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" fill="#cbd5e1">Local RAG Retrieval Backend</text>
-  <rect x="82" y="142" width="264" height="526" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
-  <text x="106" y="178" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Document Ingestion</text>
-  <rect x="106" y="205" width="216" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="124" y="231" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">doc/knowledge_base</text>
-  <rect x="106" y="266" width="98" height="38" rx="6" fill="#2563eb"/>
-  <text x="126" y="290" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Scan files</text>
-  <rect x="214" y="266" width="108" height="38" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="236" y="290" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#334155">Preview</text>
-  <text x="106" y="342" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">Supported formats</text>
-  <text x="106" y="372" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#0f172a">.md .docx .pptx .xlsx .pdf</text>
-  <text x="106" y="428" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">Chunk strategy</text>
-  <rect x="106" y="448" width="88" height="32" rx="6" fill="#dbeafe"/>
-  <text x="130" y="469" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">title</text>
-  <rect x="202" y="448" width="90" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1"/>
-  <text x="229" y="469" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">length</text>
-  <rect x="382" y="142" width="794" height="526" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
-  <text x="414" y="180" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827">Review generated chunks</text>
-  <text x="414" y="208" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#64748b">4 documents scanned · 18 chunks · 7 document images</text>
-  <rect x="414" y="236" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
-  <text x="438" y="266" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">deployment_guide.pdf · page 3</text>
-  <text x="438" y="294" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">The local model path is configured in config/paths.json before starting the API service.</text>
-  <rect x="1022" y="260" width="62" height="44" rx="6" fill="#e0f2fe" stroke="#7dd3fc"/>
-  <text x="1039" y="287" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#0369a1">image</text>
-  <rect x="414" y="350" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
-  <text x="438" y="380" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">architecture.pptx · slide 2</text>
-  <text x="438" y="408" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">miniR builds SQLite metadata, FAISS vectors, BM25 tokens and sparse embedding features.</text>
-  <rect x="414" y="464" width="700" height="94" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
-  <text x="438" y="494" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">release_matrix.xlsx · sheet API</text>
-  <text x="438" y="522" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#475569">Rows are converted into Markdown-style tables for retrieval and source attribution.</text>
-  <rect x="980" y="590" width="134" height="42" rx="6" fill="#059669"/>
-  <text x="1011" y="616" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">Confirm import</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1860" height="915" viewBox="0 0 1860 915" role="img" aria-labelledby="title desc">
+  <title id="title">miniR 文档入库界面截图</title>
+  <desc id="desc">RAG 知识库管理系统的文档入库页面，包含文件夹路径、扫描文件、扫描结果和入库设置。</desc>
+  <rect width="1860" height="915" rx="6" fill="#f3f6fb"/>
+  <rect x="1" y="1" width="1858" height="913" rx="6" fill="none" stroke="#94a3b8"/>
+  <g font-family="Segoe UI, Microsoft YaHei, Arial, sans-serif">
+    <g transform="translate(164 28)">
+      <rect x="10" y="4" width="18" height="28" fill="#83d84f" stroke="#4cae2f"/>
+      <rect x="18" y="12" width="18" height="28" fill="#60a5fa" stroke="#2563eb"/>
+      <rect x="26" y="20" width="18" height="28" fill="#e64980" stroke="#be185d"/>
+      <line x1="6" y1="30" x2="47" y2="30" stroke="#475569" stroke-width="2"/>
+      <text x="62" y="31" font-size="38" font-weight="700" fill="#020617">RAG 知识库管理系统</text>
+    </g>
+
+    <g transform="translate(165 92)" font-size="18">
+      <text x="20" y="16" fill="#2563eb">文档入库</text>
+      <text x="128" y="16" fill="#020617">文档列表</text>
+      <text x="240" y="16" fill="#020617">检索测试</text>
+      <text x="350" y="16" fill="#020617">系统管理</text>
+      <line x1="0" y1="29" x2="1518" y2="29" stroke="#d7dce5"/>
+      <line x1="0" y1="29" x2="108" y2="29" stroke="#3b82f6" stroke-width="3"/>
+    </g>
+
+    <text x="165" y="168" font-size="18" fill="#020617">输入服务器上的文件夹路径，系统自动递归扫描支持的文档并入库。</text>
+    <text x="168" y="216" font-size="17" fill="#020617">✅ 支持 .md, .docx, .pptx, .xlsx, .pdf ✅ 图片引用完整保留 ✅ 扫描时已入库的文档会自动跳过。</text>
+
+    <rect x="165" y="245" width="1167" height="112" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="181" y="276" font-size="17" fill="#475569">文件夹路径</text>
+    <rect x="181" y="292" width="1136" height="51" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="194" y="325" font-size="17" fill="#a8b1c1">如 D:\docs 或 /home/user/docs</text>
+
+    <rect x="1353" y="245" width="332" height="49" rx="7" fill="#dedfe4"/>
+    <text x="1465" y="277" font-size="21" font-weight="700" fill="#020617">📁 扫描文件</text>
+
+    <rect x="165" y="377" width="1520" height="112" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="181" y="409" font-size="17" fill="#475569">扫描结果</text>
+    <rect x="181" y="425" width="1488" height="51" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+
+    <text x="164" y="530" font-size="15" fill="#475569">扫描到的文件列表</text>
+    <rect x="165" y="550" width="1520" height="48" rx="4" fill="#f8fafc" stroke="#d7dce5"/>
+    <line x1="748" y1="550" x2="748" y2="598" stroke="#d7dce5"/>
+    <line x1="1330" y1="550" x2="1330" y2="598" stroke="#d7dce5"/>
+    <text x="177" y="580" font-size="17" font-weight="700" fill="#020617">完整路径</text>
+    <text x="758" y="580" font-size="17" font-weight="700" fill="#020617">相对路径</text>
+    <text x="1340" y="580" font-size="17" font-weight="700" fill="#020617">状态</text>
+
+    <text x="165" y="647" font-size="25" font-weight="700" fill="#020617">入库设置</text>
+    <rect x="165" y="671" width="751" height="133" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="181" y="705" font-size="17" fill="#64748b">分块策略</text>
+    <text x="181" y="727" font-size="14" fill="#a8b1c1">title: 按标题分块, length: 按长度分块</text>
+    <rect x="181" y="741" width="719" height="49" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="202" y="774" font-size="17" fill="#020617">length</text>
+    <text x="860" y="774" font-size="16" fill="#020617">⌄</text>
+
+    <rect x="937" y="671" width="748" height="243" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="953" y="705" font-size="17" fill="#64748b">分块大小（字符数）</text>
+    <text x="953" y="728" font-size="14" fill="#a8b1c1">仅 length 策略生效，默认 512</text>
+    <rect x="953" y="740" width="716" height="52" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="965" y="773" font-size="17" fill="#020617">512</text>
+    <text x="953" y="835" font-size="17" fill="#64748b">重叠比例</text>
+    <text x="953" y="860" font-size="14" fill="#a8b1c1">仅 length 策略生效，默认 0.1（10%）</text>
+    <rect x="953" y="872" width="716" height="42" rx="4" fill="#ffffff" stroke="#d7dce5"/>
+    <text x="965" y="902" font-size="17" fill="#020617">0.1</text>
+
+    <text x="1625" y="530" font-size="20" fill="#64748b">□</text>
+    <text x="1660" y="530" font-size="20" fill="#64748b">⌗</text>
+  </g>
 </svg>
